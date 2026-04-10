@@ -1,0 +1,132 @@
+{
+  "name": "Chernobyl - April 26, 1986",
+  "description": "RBMK-1000 Unit 4 disaster. Operators conducting a turbine rundown test reduced power too far, causing xenon poisoning. They withdrew nearly all control rods to compensate, then lost coolant flow during the test. The positive void coefficient and graphite displacer tips did the rest.",
+  "initial": {
+    "seed_neutrons": 30,
+    "auto_control": true,
+    "rod_positions": [3.0, 3.0, 3.0, 3.0, 3.0],
+    "sim_speed": 1.0
+  },
+  "events": [
+    {
+      "time": 5.0,
+      "action": { "type": "message" },
+      "message": "25 APR 23:10 - Reactor at 50% power, preparing turbine test"
+    },
+    {
+      "time": 15.0,
+      "action": { "type": "message" },
+      "message": "Grid controller delays test. Holding at 50%. Iodine-135 building..."
+    },
+    {
+      "time": 30.0,
+      "action": { "type": "message" },
+      "message": "26 APR 00:28 - Resume power reduction to 25%"
+    },
+    {
+      "time": 32.0,
+      "action": { "type": "set_rods", "depth": 10.0 },
+      "message": "Inserting rods to reduce power..."
+    },
+    {
+      "time": 45.0,
+      "action": { "type": "message" },
+      "message": "Power dropping. Operator overshoots the reduction."
+    },
+    {
+      "time": 47.0,
+      "action": { "type": "set_rods", "depth": 16.0 },
+      "message": "OPERATOR ERROR: Rods over-inserted! Power collapsing!"
+    },
+    {
+      "time": 60.0,
+      "action": { "type": "message" },
+      "message": "00:30 - Xe-135 poisoning building at low power..."
+    },
+    {
+      "time": 70.0,
+      "action": { "type": "message" },
+      "message": "Operators attempt to raise power against xenon poisoning"
+    },
+    {
+      "time": 72.0,
+      "action": { "type": "set_auto_control", "enabled": false },
+      "message": "AUTO CONTROL DISABLED - Manual rod operation"
+    },
+    {
+      "time": 75.0,
+      "action": { "type": "set_rods", "depth": 4.0 },
+      "message": "Withdrawing rods to overcome xenon..."
+    },
+    {
+      "time": 85.0,
+      "action": { "type": "set_rods", "depth": 1.5 },
+      "message": "VIOLATION: Rods withdrawn past safety limit!"
+    },
+    {
+      "time": 95.0,
+      "action": { "type": "set_rods", "depth": 0.5 },
+      "message": "01:03 - Only 6-8 rods remain (minimum 30 required!)"
+    },
+    {
+      "time": 110.0,
+      "action": { "type": "message" },
+      "message": "01:19 - Extra feedwater pumps ON for turbine test"
+    },
+    {
+      "time": 112.0,
+      "action": { "type": "set_coolant_flow", "flow": 1.5 },
+      "message": "Increased coolant flow - suppresses boiling temporarily"
+    },
+    {
+      "time": 130.0,
+      "action": { "type": "message" },
+      "message": "01:23:04 - TURBINE TEST BEGINS"
+    },
+    {
+      "time": 133.0,
+      "action": { "type": "set_coolant_flow", "flow": 0.5 },
+      "message": "Steam valves closed. Turbine coasting down..."
+    },
+    {
+      "time": 140.0,
+      "action": { "type": "set_coolant_flow", "flow": 0.2 },
+      "message": "Coolant pumps losing power!"
+    },
+    {
+      "time": 148.0,
+      "action": { "type": "set_coolant_flow", "flow": 0.05 },
+      "message": "COOLANT FLOW CRITICAL - Steam building in channels!"
+    },
+    {
+      "time": 158.0,
+      "action": { "type": "message" },
+      "message": "01:23:40 - Power surging! Positive void coefficient!"
+    },
+    {
+      "time": 168.0,
+      "action": { "type": "message" },
+      "message": "01:23:40 - Akimov: Press AZ-5!"
+    },
+    {
+      "time": 170.0,
+      "action": { "type": "scram" },
+      "message": "AZ-5 PRESSED - Graphite displacer tips entering core!"
+    },
+    {
+      "time": 180.0,
+      "action": { "type": "message" },
+      "message": "DISPLACER TIPS: Steam pressure blocking rod insertion!"
+    },
+    {
+      "time": 190.0,
+      "action": { "type": "message" },
+      "message": "01:23:47 - PROMPT SUPERCRITICAL EXCURSION"
+    },
+    {
+      "time": 200.0,
+      "action": { "type": "set_paused", "paused": true },
+      "message": "Reactor 4 destroyed. April 26, 1986."
+    }
+  ]
+}
