@@ -1,0 +1,192 @@
+{
+  "name": "Tutorial — RBMK Physics Walkthrough",
+  "description": "A guided tour of the RBMK-1000 reactor physics. Each phase demonstrates a key concept: neutron moderation, fission chain reactions, control rods, xenon poisoning, the positive void coefficient, and the graphite displacer tip effect. Watch the messages for explanations.",
+  "initial": {
+    "seed_neutrons": 5,
+    "auto_control": true,
+    "rod_positions": [0.0, 0.0, 0.0, 0.0, 0.0],
+    "sim_speed": 1.0
+  },
+  "events": [
+    {
+      "time": 1.0,
+      "action": { "type": "message" },
+      "message": "LESSON 1: NEUTRON MODERATION \u2014 White dots are FAST neutrons (2 MeV)"
+    },
+    {
+      "time": 8.0,
+      "action": { "type": "message" },
+      "message": "Fast neutrons hit blue GRAPHITE columns and become gray THERMAL neutrons"
+    },
+    {
+      "time": 15.0,
+      "action": { "type": "message" },
+      "message": "Only thermal neutrons can cause fission in U-235 (green cells)"
+    },
+    {
+      "time": 22.0,
+      "action": { "type": "message" },
+      "message": "Watch: fission produces 3 new FAST neutrons \u2192 they must thermalize again"
+    },
+    {
+      "time": 30.0,
+      "action": { "type": "message" },
+      "message": "LESSON 2: CHAIN REACTION \u2014 The reactor is reaching criticality..."
+    },
+    {
+      "time": 35.0,
+      "action": { "type": "message" },
+      "message": "Auto-control inserts rods (red bars) to absorb excess thermal neutrons"
+    },
+    {
+      "time": 42.0,
+      "action": { "type": "message" },
+      "message": "The rods balance fission rate at ~40 act/s. This is steady-state power."
+    },
+    {
+      "time": 50.0,
+      "action": { "type": "message" },
+      "message": "LESSON 3: WATER COOLANT \u2014 Dark blue = cool water (absorbs some neutrons)"
+    },
+    {
+      "time": 57.0,
+      "action": { "type": "message" },
+      "message": "Neutron hits heat water: blue \u2192 red (warm) \u2192 black (steam/vapor)"
+    },
+    {
+      "time": 65.0,
+      "action": { "type": "message" },
+      "message": "LESSON 4: POSITIVE VOID COEFFICIENT \u2014 The RBMK's fatal flaw"
+    },
+    {
+      "time": 70.0,
+      "action": { "type": "set_coolant_flow", "flow": 0.3 },
+      "message": "Reducing coolant flow... watch water turn to steam (black cells)"
+    },
+    {
+      "time": 78.0,
+      "action": { "type": "message" },
+      "message": "Steam = no water absorption = MORE fissions = MORE heat = MORE steam!"
+    },
+    {
+      "time": 85.0,
+      "action": { "type": "message" },
+      "message": "This positive feedback loop is what destroyed Chernobyl. Power is rising!"
+    },
+    {
+      "time": 92.0,
+      "action": { "type": "set_coolant_flow", "flow": 1.0 },
+      "message": "Restoring coolant flow. Water returns, absorbs neutrons, power drops."
+    },
+    {
+      "time": 100.0,
+      "action": { "type": "message" },
+      "message": "LESSON 5: XENON POISONING \u2014 Watch for purple and orange cells"
+    },
+    {
+      "time": 105.0,
+      "action": { "type": "message" },
+      "message": "Fission produces Iodine-135 (orange). It decays into Xenon-135 (purple)."
+    },
+    {
+      "time": 112.0,
+      "action": { "type": "message" },
+      "message": "Xe-135 is a neutron POISON (2.6M barn cross-section). It kills neutrons."
+    },
+    {
+      "time": 118.0,
+      "action": { "type": "message" },
+      "message": "Now watch what happens when we drop power sharply..."
+    },
+    {
+      "time": 120.0,
+      "action": { "type": "set_auto_control", "enabled": false },
+      "message": "Auto-control OFF. Inserting rods to cut power."
+    },
+    {
+      "time": 122.0,
+      "action": { "type": "set_rods", "depth": 14.0 },
+      "message": "Rods going deep. Power dropping. But xenon keeps building..."
+    },
+    {
+      "time": 135.0,
+      "action": { "type": "message" },
+      "message": "XENON TRAP: Low power means xenon isn't burned off. It accumulates!"
+    },
+    {
+      "time": 142.0,
+      "action": { "type": "message" },
+      "message": "This is the 'iodine pit'. At Chernobyl, operators fought this for hours."
+    },
+    {
+      "time": 150.0,
+      "action": { "type": "set_rods", "depth": 2.0 },
+      "message": "LESSON 6: FIGHTING XENON \u2014 Withdrawing rods to recover power..."
+    },
+    {
+      "time": 158.0,
+      "action": { "type": "message" },
+      "message": "Rods out = less absorption = more neutrons survive = xenon burns off"
+    },
+    {
+      "time": 165.0,
+      "action": { "type": "message" },
+      "message": "But we've removed almost all control margin. The reactor is fragile."
+    },
+    {
+      "time": 172.0,
+      "action": { "type": "message" },
+      "message": "LESSON 7: GRAPHITE DISPLACER TIPS \u2014 Watch the blue tips on the rods"
+    },
+    {
+      "time": 177.0,
+      "action": { "type": "message" },
+      "message": "Each rod has a graphite tip (blue) below the boron absorber (red)"
+    },
+    {
+      "time": 183.0,
+      "action": { "type": "message" },
+      "message": "When rods INSERT, the graphite tip displaces water FIRST..."
+    },
+    {
+      "time": 188.0,
+      "action": { "type": "message" },
+      "message": "...replacing a neutron ABSORBER (water) with a MODERATOR (graphite)"
+    },
+    {
+      "time": 194.0,
+      "action": { "type": "message" },
+      "message": "This briefly INCREASES reactivity \u2014 the 'positive scram' effect!"
+    },
+    {
+      "time": 200.0,
+      "action": { "type": "message" },
+      "message": "FINAL LESSON: Press S for SCRAM and watch what happens..."
+    },
+    {
+      "time": 205.0,
+      "action": { "type": "set_coolant_flow", "flow": 0.1 },
+      "message": "Reducing coolant to simulate the Chernobyl conditions..."
+    },
+    {
+      "time": 215.0,
+      "action": { "type": "message" },
+      "message": "Steam is building. Void coefficient active. Now press S for SCRAM!"
+    },
+    {
+      "time": 225.0,
+      "action": { "type": "message" },
+      "message": "If you haven't pressed S yet, do it now! Watch the rods bounce..."
+    },
+    {
+      "time": 240.0,
+      "action": { "type": "message" },
+      "message": "TUTORIAL COMPLETE \u2014 Try the Chernobyl scenario to see it all together!"
+    },
+    {
+      "time": 260.0,
+      "action": { "type": "set_paused", "paused": true },
+      "message": "End of tutorial. Press R to restart or Q to quit."
+    }
+  ]
+}
