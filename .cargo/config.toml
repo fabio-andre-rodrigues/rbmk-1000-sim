@@ -1,14 +1,6 @@
-# Faster linking per platform (optional, CI falls back to defaults).
-
-# Windows: lld ships with MSVC/LLVM
 [target.x86_64-pc-windows-msvc]
 rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
-# Linux: mold (apt install mold clang)
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]
-
-# macOS: default Apple linker is fast enough; no override needed.
-# lld is not bundled and brew-installed llvm's lld requires PATH
-# manipulation that breaks cross-compilation (x86_64 on arm runner).
