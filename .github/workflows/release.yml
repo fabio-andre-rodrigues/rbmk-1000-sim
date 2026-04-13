@@ -60,12 +60,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mold clang
 
-      - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
+      - name: Build release binary (TUI + GFX)
+        run: cargo build --release --target ${{ matrix.target }} --features gfx
 
       - name: Run tests
         if: matrix.target != 'aarch64-apple-darwin'
-        run: cargo test --release --target ${{ matrix.target }}
+        run: cargo test --release --target ${{ matrix.target }} --features gfx
 
       - name: Package (Windows)
         if: matrix.os == 'windows-latest'
