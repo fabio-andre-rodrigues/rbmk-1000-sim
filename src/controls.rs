@@ -106,10 +106,9 @@ impl AbsorptionRodSystem {
     }
 
     /// Move rods toward their targets at ROD_MOVE_SPEED.
-    /// `pressure_up[i]`: per-rod rows/sec that local steam pushes
-    /// rod i upward, computed from the void fraction in that zone.
-    /// Insertion is slowed; withdrawal is assisted.
-    pub fn update_toward_targets(&mut self, dt: f32, pressure_up: &[f32; NUM_ABSORPTION_RODS]) {
+    /// Rod channels have separate low-pressure cooling that does
+    /// not impede movement during normal operation.
+    pub fn update_toward_targets(&mut self, dt: f32) {
         if !self.target_active {
             return;
         }
@@ -124,11 +123,8 @@ impl AbsorptionRodSystem {
             all_reached = false;
 
             let old_pos = self.positions[i];
-            // Drive toward target; local steam always pushes up.
-            // Inserting (diff > 0): net = ROD_MOVE_SPEED - pressure (opposed)
-            // Withdrawing (diff < 0): net = -ROD_MOVE_SPEED - pressure (assisted)
             let drive = diff.signum() * ROD_MOVE_SPEED;
-            self.positions[i] += (drive - pressure_up[i]) * dt;
+            self.positions[i] += drive * dt;
             self.positions[i] = self.positions[i].clamp(0.0, GRID_ROWS as f32);
 
             // Don't overshoot target
@@ -168,11 +164,12 @@ impl AbsorptionRodSystem {
         }
     }
 
-    /// Drive SCRAM rods down at SCRAM_ROD_SPEED against local steam.
-    /// `pressure_up[i]`: per-rod upward force from zone void fraction.
-    /// At high local void, steam overcomes gravity-driven SCRAM and
-    /// rods are pushed back UP — the Chernobyl mechanism.
-    pub fn update_scram(&mut self, dt: f32, pressure_up: &[f32; NUM_ABSORPTION_RODS]) {
+    /// Drive SCRAM rods down at SCRAM_ROD_SPEED against channel resistance.
+    /// `channel_resistance[i]`: per-rod resistance from fuel channel
+    /// deformation during a power excursion. At Chernobyl, the power
+    /// surge caused fuel to fragment and channels to buckle, physically
+    /// jamming the rods at ~2-2.5m of 7m travel (INSAG-7).
+    pub fn update_scram(&mut self, dt: f32, channel_resistance: &[f32; NUM_ABSORPTION_RODS]) {
         if !self.scram_active {
             return;
         }
@@ -181,8 +178,11 @@ impl AbsorptionRodSystem {
         for i in 0..NUM_ABSORPTION_RODS {
             let old_pos = self.positions[i];
 
-            // SCRAM drives down (+), local steam pushes up (-)
-            let net_speed = SCRAM_ROD_SPEED - pressure_up[i];
+            // SCRAM drives down (+), channel deformation resists that motion.
+            // If resistance exceeds the gravity-driven insertion speed, the rod
+            // stalls instead of reversing direction — a buckled channel jams
+            // the rod in place, it does not push it back out.
+            let net_speed = (SCRAM_ROD_SPEED - channel_resistance[i]).max(0.0);
             self.positions[i] += net_speed * dt;
             self.positions[i] = self.positions[i].clamp(0.0, GRID_ROWS as f32);
 

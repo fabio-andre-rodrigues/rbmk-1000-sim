@@ -232,24 +232,22 @@ impl Simulation {
         self.stats.activations_this_frame = 0;
         self.stats.zone_activations_this_frame = [0; NUM_ABSORPTION_RODS];
 
-        // Per-rod steam force: each rod's upward push is computed from
-        // the local void fraction in its zone. More vapor in the
-        // channel = more steam pushing that rod toward withdrawn.
-        let rod_steam = self.compute_rod_steam_forces();
-
         // Scenario rod targets take priority over auto-control.
-        // Rods move gradually toward target depth at ROD_MOVE_SPEED,
-        // with local steam assisting withdrawal / opposing insertion.
+        // Rod channels have separate low-pressure cooling — rods
+        // move freely during normal operation.
         if self.rods.target_active && !self.rods.scram_active {
-            self.rods.update_toward_targets(dt, &rod_steam);
+            self.rods.update_toward_targets(dt);
         } else if self.stats.auto_control && !self.rods.scram_active {
             self.rods.auto_update(&self.stats.zone_rates, dt);
         }
 
-        // SCRAM: gravity-driven insertion vs local steam per rod.
-        // Rods in heavily boiling zones stall while cooler zones insert.
+        // SCRAM: gravity-driven insertion vs channel deformation.
+        // During a power excursion, fuel fragmentation and channel
+        // buckling physically jam the rods (INSAG-7). The control
+        // rod channels had separate cooling that did NOT boil.
         if self.rods.scram_active {
-            self.rods.update_scram(dt, &rod_steam);
+            let channel_resistance = self.compute_channel_deformation();
+            self.rods.update_scram(dt, &channel_resistance);
         }
 
         // Sync rod positions to grid cells
@@ -593,61 +591,41 @@ impl Simulation {
         self.stats.pressure_mpa = raw_pressure.min(200.0); // cap for display
     }
 
-    /// Per-rod upward steam force derived from local void fraction
-    /// AND how much rod is actually inside the pressure channel.
+    /// Per-rod channel resistance from fuel channel deformation.
     ///
-    /// Steam pushes on the inserted portion of the rod — at depth 0
-    /// there is nothing to push on, so force is zero. As the rod
-    /// descends, more surface area is exposed to channel steam and
-    /// the upward force grows. This produces the historically accurate
-    /// "bouncing" behavior: rods insert freely at first (SCRAM speed),
-    /// reach 6-7 rows (~30-35%), then steam resistance stalls and
-    /// pushes them back, and they oscillate around the equilibrium.
+    /// During a power excursion, fuel rods fragment and swell,
+    /// pressure tubes rupture, and graphite blocks shift — physically
+    /// deforming the control rod channels. This is what prevented
+    /// full rod insertion at Chernobyl (INSAG-7), NOT steam pressure
+    /// in the rod channels (which had separate low-pressure cooling
+    /// circuits that did not boil).
+    ///
+    /// Resistance scales with local power (per-zone activation rate):
+    /// channels only deform during a major power excursion, not
+    /// during normal operation. Rods insert freely at first, then
+    /// jam as the excursion (triggered by the displacer tips and
+    /// void coefficient) deforms the channels.
     ///
     /// Real RBMK rods reached ~2-2.5m of their 7m travel before
-    /// steam in the pressure channels physically lifted them.
-    fn compute_rod_steam_forces(&self) -> [f32; NUM_ABSORPTION_RODS] {
-        let mut forces = [0.0_f32; NUM_ABSORPTION_RODS];
-        let relief = self.stats.coolant_flow.clamp(0.3, 1.5);
-        // Low flow traps steam in the channel → more force per void cell
-        let flow_factor = 0.9 + (1.0 - relief.min(1.0)) * 0.5;
+    /// channel deformation physically stopped them.
+    fn compute_channel_deformation(&self) -> [f32; NUM_ABSORPTION_RODS] {
+        let mut resistance = [0.0_f32; NUM_ABSORPTION_RODS];
+        let threshold = CHANNEL_DEFORM_ZONE_THRESHOLD;
 
         for i in 0..NUM_ABSORPTION_RODS {
-            let zone_start = i * MODERATOR_INTERVAL;
-            let zone_end = (zone_start + MODERATOR_INTERVAL).min(GRID_COLS);
-
-            let mut vapor = 0u32;
-            let mut total = 0u32;
-            for row in 0..GRID_ROWS {
-                for col in zone_start..zone_end {
-                    match self.grid.water[row][col] {
-                        WaterState::Cool { .. } | WaterState::Warm { .. } => total += 1,
-                        WaterState::Vapor { .. } => {
-                            vapor += 1;
-                            total += 1;
-                        }
-                        WaterState::None => {}
-                    }
-                }
-            }
-
-            if total > 0 {
-                let void_fraction = vapor as f32 / total as f32;
-                // How much rod is exposed to channel steam (0.0 = withdrawn, 1.0 = fully inserted)
-                let rod_in_channel = self.rods.positions[i] / GRID_ROWS as f32;
-
-                // Force = void × flow_factor × rod_exposure × gain.
-                // At 100% void, low flow (ff≈1.3), 35% insertion (7/20):
-                //   1.0 × 1.5 × 1.3 × 0.35 × 2.5 = 1.71 > SCRAM(1.5) → pushed back.
-                // At 100% void, low flow, 25% insertion (5/20):
-                //   1.0 × 1.5 × 1.3 × 0.25 × 2.5 = 1.22 < SCRAM → still inserting.
-                // Equilibrium ≈ 30% insertion (6 rows) — matches historical record.
-                forces[i] = (void_fraction * SCRAM_ROD_SPEED * flow_factor
-                    * rod_in_channel * 2.5)
+            let zone_rate = self.stats.zone_rates[i];
+            if zone_rate > threshold {
+                let excess = zone_rate - threshold;
+                // Resistance grows with power above threshold.
+                // At ~1.67x threshold, resistance matches SCRAM speed
+                // and rods stall — matching the historical ~30% depth.
+                resistance[i] = (excess / threshold
+                    * SCRAM_ROD_SPEED
+                    * CHANNEL_DEFORM_GAIN)
                     .min(SCRAM_ROD_SPEED * 2.0);
             }
         }
-        forces
+        resistance
     }
 }
 
@@ -1525,7 +1503,7 @@ mod tests {
              max_pressure > 50.0),
             ("Power should exceed 200% during void coefficient surge",
              max_act_rate > TARGET_ACTIVATIONS_PER_SEC * 2.0),
-            ("SCRAM rods should be blocked by steam (<20% insertion)",
+            ("SCRAM rods should be blocked by channel deformation (<20% insertion)",
              scram_rod_min < 20.0),
         ];
 

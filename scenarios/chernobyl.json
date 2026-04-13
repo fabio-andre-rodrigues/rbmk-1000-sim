@@ -1,6 +1,6 @@
 {
   "name": "Chernobyl - April 26, 1986",
-  "description": "RBMK-1000 Unit 4 disaster. During a turbine rundown test, operators reduced power but it unexpectedly collapsed to 30 MWt. Fighting xenon poisoning, they withdrew nearly all control rods — ORM fell to 6-8 rods (minimum 15 required). When coolant flow dropped during the test, the positive void coefficient caused a power surge. AZ-5 was pressed but the graphite displacer tips triggered a further spike. Steam jammed the rods at ~2m of 7m travel. Prompt supercritical excursion destroyed the reactor.",
+  "description": "RBMK-1000 Unit 4 disaster. During a turbine rundown test, operators reduced power but it unexpectedly collapsed to 30 MWt. To recover, they withdrew nearly all control rods against void collapse, graphite cooling, and rising xenon — ORM fell to 6-8 rods (minimum 15 required). When AZ-5 was pressed, graphite displacer tips on the control rods added positive reactivity. The resulting power excursion deformed fuel channels, jamming rods at ~2m of 7m travel. Prompt supercritical excursion destroyed the reactor.",
   "initial": {
     "seed_neutrons": 30,
     "auto_control": true,
@@ -16,7 +16,7 @@
     {
       "time": 15.0,
       "action": { "type": "message" },
-      "message": "Grid controller delayed test 9 hours. Xe-135 building in fuel..."
+      "message": "Grid controller delayed test 9 hours. Xe-135 in equilibrium at 1,600 MWt."
     },
     {
       "time": 30.0,
@@ -31,17 +31,17 @@
     {
       "time": 45.0,
       "action": { "type": "message" },
-      "message": "Near-zero power. Xe-135 poisoning accelerating rapidly."
+      "message": "Near-zero power. Void collapse + graphite cooling absorb reactivity."
     },
     {
       "time": 47.0,
       "action": { "type": "set_rods", "depth": 16.0 },
-      "message": "Rods deep in core. Xenon trap closing on the reactor."
+      "message": "Rods deep in core. Multiple reactivity losses demand withdrawal."
     },
     {
       "time": 60.0,
       "action": { "type": "message" },
-      "message": "Operators withdraw rods to recover power against xenon..."
+      "message": "Operators withdraw rods — void collapse, cooling graphite, rising Xe..."
     },
     {
       "time": 70.0,
@@ -56,7 +56,7 @@
     {
       "time": 75.0,
       "action": { "type": "set_rods", "depth": 4.0 },
-      "message": "Withdrawing rods to overcome xenon poisoning..."
+      "message": "Withdrawing rods to maintain power against multiple reactivity losses..."
     },
     {
       "time": 85.0,
@@ -96,17 +96,17 @@
     {
       "time": 138.0,
       "action": { "type": "set_coolant_flow", "flow": 0.05 },
-      "message": "COOLANT FLOW CRITICAL \u2014 Void coefficient feedback starting!"
+      "message": "Coolant flow dropping. Void fraction rising in pressure channels."
     },
     {
       "time": 150.0,
       "action": { "type": "message" },
-      "message": "01:23:30 \u2014 Power rising. Positive void coefficient active."
+      "message": "01:23:30 \u2014 Parameters shifting. Void coefficient slowly adding reactivity."
     },
     {
       "time": 160.0,
       "action": { "type": "message" },
-      "message": "01:23:40 \u2014 Akimov orders AZ-5. Emergency scram!"
+      "message": "01:23:40 \u2014 AZ-5 pressed. Routine or precautionary shutdown."
     },
     {
       "time": 163.0,
@@ -126,7 +126,7 @@
     {
       "time": 184.0,
       "action": { "type": "message" },
-      "message": "Rods jammed at ~2\u20132.5m of 7m. Steam lifting assemblies!"
+      "message": "Rods jammed at ~2\u20132.5m. Fuel channels deforming from power excursion!"
     },
     {
       "time": 190.0,

@@ -11,23 +11,28 @@ pub const THERMAL_NEUTRON_SPEED: f32 = 80.0; // px/s
 pub const NEUTRONS_PER_FISSION: usize = 3;
 
 // === Delayed Neutrons ===
-// Real: beta_eff = 0.0065 (0.65% of fission neutrons are delayed).
+// At the time of the accident, significant fuel burnup had reduced
+// effective U-235 enrichment to ~1.3% while breeding fissile Pu-239
+// and Pu-241. Plutonium isotopes have a much lower delayed neutron
+// fraction (~0.21%) than U-235 (~0.65%). The weighted average for
+// the mixed fuel gives beta_eff ≈ 0.005 (0.50%).
 // Lambda_eff = 0.08 s^-1 (weighted average of 6 precursor groups,
 // corresponding to ~8s average precursor half-life).
-// Without delayed neutrons, the reactor period at prompt critical
-// is ~10^-4 s (instant). With them, it's ~seconds (controllable).
-// We model one effective delayed group. Each fission deposits
-// DELAYED_NEUTRON_FRACTION of its neutrons into a precursor pool
-// that decays into actual neutrons at rate DELAYED_LAMBDA.
-pub const DELAYED_NEUTRON_FRACTION: f32 = 0.0065;
+// Lower beta means prompt supercritical is reached at lower
+// reactivity insertion — making the displacer tip effect more
+// dangerous than it would be with fresh fuel.
+pub const DELAYED_NEUTRON_FRACTION: f32 = 0.0050;
 pub const DELAYED_LAMBDA: f32 = 0.08; // s^-1 (precursor decay rate)
 
 // === Fission & Cross-Sections ===
-// Real RBMK fuel is ~2% enriched UO2. Not every thermal neutron
-// hitting a fuel cell causes fission — the macroscopic fission
-// cross-section per cell width gives a probability per traversal.
-// At 15%, a thermal neutron travels ~6-7 fuel cells on average
-// before fission, accumulating water absorption along the way.
+// Fresh RBMK fuel is ~2% enriched UO2, but by the time of the
+// accident significant burnup had reduced effective enrichment to
+// ~1.3% (with Pu-239/241 contributing to the fissile inventory).
+// Not every thermal neutron hitting a fuel cell causes fission —
+// the macroscopic fission cross-section per cell width gives a
+// probability per traversal. At 20%, a thermal neutron travels
+// ~5 fuel cells on average before fission, accumulating water
+// absorption along the way.
 pub const FISSION_PROBABILITY: f32 = 0.20;
 pub const WATER_NEUTRON_ABSORPTION_PROB: f32 = 0.08;
 
@@ -79,6 +84,17 @@ pub const DEFAULT_COOLANT_FLOW: f32 = 1.0;
 
 // === Void Coefficient ===
 pub const VOID_COEFFICIENT_BOOST: f32 = 1.3;
+
+// === Channel Deformation ===
+// During a power excursion, fuel rods fragment and swell, pressure
+// tubes rupture, and graphite blocks shift — physically deforming
+// control rod channels. This is what jammed the rods at Chernobyl
+// (INSAG-7), NOT steam pressure in the rod channels (which had
+// separate low-pressure cooling circuits that did not boil).
+// Resistance activates per-zone when zone activation rate exceeds
+// this threshold, and scales with power above it.
+pub const CHANNEL_DEFORM_ZONE_THRESHOLD: f32 = 20.0; // act/s per zone (~2.5x normal)
+pub const CHANNEL_DEFORM_GAIN: f32 = 1.5;
 
 // === Power Display ===
 pub const POWER_PER_ACTIVATION: f32 = 80.0; // 3200/40
