@@ -20,33 +20,44 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
 
+# ──────────────────────────────────────────────────────────────────
+# Pipeline: version → update → test → build → tag → release
+# ──────────────────────────────────────────────────────────────────
+
 jobs:
+
+  # ── Step 1: Determine next version from conventional commits ──
   version:
+    name: "1. Compute version"
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.bump.outputs.version }}
-      should_release: ${{ steps.bump.outputs.should_release }}
+      current: ${{ steps.current.outputs.version }}
+      next: ${{ steps.next.outputs.version }}
+      bump: ${{ steps.next.outputs.bump }}
+      should_release: ${{ steps.next.outputs.should_release }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Determine bump type and compute next version
-        id: bump
+      - name: Read current version from Cargo.toml
+        id: current
         run: |
-          # Current version from Cargo.toml
-          CURRENT=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          echo "Current version: $CURRENT"
+          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current: $VERSION"
 
-          # Find last release tag
+      - name: Compute next version
+        id: next
+        run: |
+          CURRENT="${{ steps.current.outputs.version }}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
           LAST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
           if [ -z "$LAST_TAG" ]; then
             LAST_TAG=$(git rev-list --max-parents=0 HEAD)
           fi
-          echo "Commits since: $LAST_TAG"
 
-          # Determine bump type
           BUMP="${{ inputs.bump }}"
           if [ "$BUMP" = "auto" ]; then
             COMMITS=$(git log "$LAST_TAG"..HEAD --pretty=format:"%s" 2>/dev/null || git log --pretty=format:"%s")
@@ -57,52 +68,82 @@ jobs:
             elif echo "$COMMITS" | grep -qiE '^fix(\(|:)|^docs(\(|:)|^ci(\(|:)|^chore(\(|:)'; then
               BUMP="patch"
             else
-              echo "No conventional commits found since $LAST_TAG — skipping release"
+              echo "No releasable conventional commits since $LAST_TAG"
               echo "should_release=false" >> $GITHUB_OUTPUT
               exit 0
             fi
           fi
 
-          # Bump version
           case "$BUMP" in
             major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
             minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
             patch) PATCH=$((PATCH + 1)) ;;
           esac
 
-          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          echo "Bump: $BUMP → v${NEW_VERSION}"
+          NEXT="${MAJOR}.${MINOR}.${PATCH}"
 
-          # Check if tag already exists
-          if git tag -l "v${NEW_VERSION}" | grep -q "v${NEW_VERSION}"; then
-            echo "Tag v${NEW_VERSION} already exists — skipping"
+          if git tag -l "v${NEXT}" | grep -q "v${NEXT}"; then
+            echo "Tag v${NEXT} already exists"
             echo "should_release=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          echo "version=v${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "bump=$BUMP" >> $GITHUB_OUTPUT
+          echo "version=$NEXT" >> $GITHUB_OUTPUT
           echo "should_release=true" >> $GITHUB_OUTPUT
+          echo "Bump: $BUMP  $CURRENT → $NEXT"
 
-      - name: Update Cargo.toml version
-        if: steps.bump.outputs.should_release == 'true'
+  # ── Step 2: Update Cargo.toml and commit ──────────────────────
+  update-cargo:
+    name: "2. Update Cargo.toml"
+    needs: version
+    if: needs.version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Bump version in Cargo.toml
         run: |
-          VERSION="${{ steps.bump.outputs.version }}"
-          VERSION="${VERSION#v}"  # strip v prefix
-          sed -i "s/^version = \".*\"/version = \"${VERSION}\"/" Cargo.toml
-          echo "Cargo.toml updated to $VERSION"
+          sed -i "s/^version = \".*\"/version = \"${{ needs.version.outputs.next }}\"/" Cargo.toml
           grep '^version' Cargo.toml
 
-      - name: Commit version bump
-        if: steps.bump.outputs.should_release == 'true'
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Cargo.toml
-          git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
+          git commit -m "chore(release): v${{ needs.version.outputs.next }}"
           git push
 
+  # ── Step 3: Run tests (fail fast before multi-platform build) ─
+  test:
+    name: "3. Test"
+    needs: [version, update-cargo]
+    if: needs.version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: test-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run tests
+        run: cargo test --features gfx
+
+  # ── Step 4: Build release binaries (all platforms) ────────────
   build:
-    needs: version
+    name: "4. Build (${{ matrix.target }})"
+    needs: [version, test]
     if: needs.version.outputs.should_release == 'true'
     strategy:
       matrix:
@@ -136,7 +177,7 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Cache cargo registry and build
+      - name: Cache cargo
         uses: actions/cache@v5
         with:
           path: |
@@ -155,10 +196,6 @@ jobs:
 
       - name: Build release binary (TUI + GFX)
         run: cargo build --release --target ${{ matrix.target }} --features gfx
-
-      - name: Run tests
-        if: matrix.target != 'aarch64-apple-darwin'
-        run: cargo test --release --target ${{ matrix.target }} --features gfx
 
       - name: Package (Windows)
         if: matrix.os == 'windows-latest'
@@ -186,22 +223,34 @@ jobs:
           name: ${{ matrix.archive }}
           path: ${{ matrix.archive }}
 
-  release:
+  # ── Step 5: Create git tag ────────────────────────────────────
+  tag:
+    name: "5. Tag"
     needs: [version, build]
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v5
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Create tag
+      - name: Create annotated tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ needs.version.outputs.version }}" -m "Release ${{ needs.version.outputs.version }}"
-          git push origin "${{ needs.version.outputs.version }}"
+          git tag -a "v${{ needs.version.outputs.next }}" \
+            -m "Release v${{ needs.version.outputs.next }}"
+          git push origin "v${{ needs.version.outputs.next }}"
+
+  # ── Step 6: Create GitHub release with artifacts ──────────────
+  release:
+    name: "6. Release"
+    needs: [version, tag]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
 
       - name: Download all artifacts
         uses: actions/download-artifact@v5
@@ -212,6 +261,6 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.version.outputs.version }}
+          tag_name: "v${{ needs.version.outputs.next }}"
           generate_release_notes: true
           files: artifacts/*
