@@ -68,19 +68,36 @@ Two fatal design flaws made Chernobyl possible:
 
   Anatoly Dyatlov   Deputy Chief Engineer. Present to direct the
                      test. Highest-ranking person in the control
-                     room that night.
+                     room that night. Background in submarine
+                     reactor engineering. Colleagues described him
+                     as harsh, dictatorial, and deeply confident in
+                     his technical expertise. Many feared or
+                     detested his insistence on unquestioning
+                     compliance. Reports suggest Dyatlov was
+                     expecting a promotion — a successful test
+                     completion was seen as a necessary achievement
+                     for career advancement within the Soviet
+                     nuclear bureaucracy. The test had already been
+                     delayed by two shifts, creating additional
+                     pressure to finish before the window closed.
 
   Aleksandr Akimov  Unit Shift Supervisor, Unit 4 night shift.
-                     Responsible for operational decisions.
+                     Responsible for operational decisions. When
+                     power collapsed to 30 MWt, Akimov wanted to
+                     abort the test. Dyatlov overruled him and
+                     threatened to replace the shift.
 
   Leonid Toptunov   Senior Reactor Control Engineer. Responsible
                      for control rod positions and reactor regimen.
                      25 years old, had worked independently for
-                     approximately three months.
+                     approximately three months. Along with Akimov,
+                     he objected to continuing but was overridden.
 
   Akimov and Toptunov both died of acute radiation syndrome in
   May 1986 after entering the destroyed reactor building to attempt
-  to pump water into the ruined core.
+  to pump water into the ruined core. Akimov died on May 11, having
+  said that his conscience hurt more than his injuries. Toptunov
+  died three days later.
 
 
 =====================================================================
@@ -324,12 +341,42 @@ Two fatal design flaws made Chernobyl possible:
   However, INSAG-7 also stated: "INSAG remains of the opinion
   that critical actions of the operators were most ill judged."
 
-  Dyatlov's position (until his death in 1995)
-  ─────────────────────────────────────────────
-  Anatoly Dyatlov maintained that the reactor designers and the
-  officials who approved the flawed safety systems were the true
-  culprits. He acknowledged rules were broken but argued the
-  operators had no way of knowing that pressing AZ-5 could
+  Dyatlov's motivations and defense
+  ─────────────────────────────────
+  Dyatlov's insistence on continuing the test despite obvious
+  dangers was driven by multiple factors:
+
+  - CAREER AMBITION: Reports and contemporaneous accounts suggest
+    Dyatlov was expecting a promotion. A successful test was seen
+    as a necessary achievement. Dyatlov reportedly wanted Fomin's
+    position (Chief Engineer); Fomin wanted Bryukhanov's (Plant
+    Director). The Soviet nuclear hierarchy rewarded results.
+
+  - SCHEDULE PRESSURE: The test had been delayed by two shifts
+    and needed to be completed before a team from NIKIIET arrived
+    to conduct other studies. The window was closing.
+
+  - AUTHORITARIAN MANAGEMENT: When Akimov and Toptunov objected
+    to continuing after the power collapse, Dyatlov threatened to
+    replace the shift. Subordinates feared his power to punish
+    those who disobeyed. In the Soviet system, refusing a direct
+    order from a superior could end a career.
+
+  - OVERCONFIDENCE: With a background in submarine reactor
+    engineering, Dyatlov believed himself an expert in RBMK
+    reactors. He viewed the low-power state as a manageable
+    operational deviation, not a precursor to catastrophe.
+
+  - SOVIET CULTURE: The political system pressured managers to
+    achieve production targets. The possibility of a catastrophic
+    RBMK failure was considered so remote that it was effectively
+    treated as impossible.
+
+  After the accident, Dyatlov was sentenced to 10 years in prison.
+  He maintained until his death in 1995 that the reactor designers
+  and the officials who approved the flawed safety systems were
+  the true culprits. He acknowledged rules were broken but argued
+  the operators had no way of knowing that pressing AZ-5 could
   trigger an explosion. The positive scram effect was not in any
   operating manual, and the operators were never told about it.
 
@@ -403,3 +450,11 @@ Two fatal design flaws made Chernobyl possible:
   [6] Wikipedia
       "Investigations into the Chernobyl disaster"
       https://en.wikipedia.org/wiki/Investigations_into_the_Chernobyl_disaster
+
+  [7] ChernobylX
+      "From Engineer To Villain: The Controversial Legacy of Anatoly Dyatlov"
+      https://chernobylx.com/from-engineer-to-villain-the-controversial-legacy-of-anatoly-dyatlov/
+
+  [8] Wikipedia
+      "Individual involvement in the Chernobyl disaster"
+      https://en.wikipedia.org/wiki/Individual_involvement_in_the_Chernobyl_disaster
