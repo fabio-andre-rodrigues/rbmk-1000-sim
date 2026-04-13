@@ -22,7 +22,7 @@ Pre-built binaries for Windows, Linux, and macOS are available on the [Releases]
 - **Iodine-135 / Xenon-135 decay chain** -- iodine accumulates during fission, decays into xenon on compressed timescale, creating the "iodine pit" effect
 - **Water cooling** -- cool/warm/vapor state machine with neutron hit counting
 - **Positive void coefficient** -- vapor cells increase fission probability (the key RBMK flaw)
-- **Delayed neutrons** -- single-group precursor pool (beta=0.0065, lambda=0.08/s) distinguishing controllable from prompt-critical states
+- **Delayed neutrons** -- single-group precursor pool (beta=0.005 for burned fuel with Pu-239/241, lambda=0.08/s) distinguishing controllable from prompt-critical states
 - **Spontaneous fission source** -- background neutron generation to bootstrap chain reactions
 
 ### Control Systems
@@ -30,9 +30,9 @@ Pre-built binaries for Windows, Linux, and macOS are available on the [Releases]
 - **Gradual rod movement** -- scenario-driven rods move toward targets at realistic speed, not instantly
 - **Gradual SCRAM** -- rods insert at 1.5 rows/s (~13s full insertion) with gravity-driven mechanics
 - **Graphite displacer tip effect** -- brief reactivity spike at the rod's leading edge during insertion (the Chernobyl mechanism), rendered in distinct blue color
-- **Per-rod steam pressure** -- each rod's upward steam force derived from local zone void fraction and rod depth in channel. Rods in heavily boiling zones stall independently while cooler zones can still insert. Steam always pushes UP: opposes insertion, assists withdrawal.
-- **SCRAM rod bouncing** -- at extreme void fractions, rods insert to ~30% (6-7 rows) then oscillate as steam pressure fights gravity, matching the historical 2-2.5m of 7m travel at Chernobyl
-- **Coolant flow control** -- adjustable pump flow rate affecting water cooling, vapor return, and local rod steam forces
+- **Channel deformation model** -- during a power excursion, per-zone resistance increases with local activation rate, physically jamming rods. Control rod channels had separate low-pressure cooling that did not boil (INSAG-7).
+- **SCRAM rod jamming** -- rods insert freely at first, then stall at ~30% depth (6-7 rows) as the power excursion deforms fuel channels, matching the historical 2-2.5m of 7m travel at Chernobyl. Buckled channels jam rods in place but cannot push them back out (speed clamped to >= 0).
+- **Coolant flow control** -- adjustable pump flow rate affecting water cooling and vapor return
 
 ### Visualization
 - **TUI renderer** (ratatui + crossterm) -- colored Unicode grid, real-time HUD with statistics and keyboard controls. Adapts to terminal size with dynamic cell width.
@@ -43,7 +43,7 @@ Pre-built binaries for Windows, Linux, and macOS are available on the [Releases]
 
 ### Scenario System
 - **JSON scenario files** -- timed sequences of operator actions (rod targets, auto-control, coolant flow)
-- **Gradual rod movement** -- `set_rods` events set targets that rods move toward at realistic speed, with steam pressure assisting withdrawal and opposing insertion
+- **Gradual rod movement** -- `set_rods` events set targets that rods move toward at realistic speed
 - **Physics-driven consequences** -- scenarios only script what operators did; the simulation physics produces the disaster naturally
 - **Chernobyl scenario included** -- recreates the April 26, 1986 disaster sequence with historically accurate operator actions, cross-referenced with INSAG-7 and WNA sources
 
@@ -108,9 +108,9 @@ src/
   grid.rs           -- Grid, CellState, WaterState, iodine tracking
   neutron.rs        -- Neutron struct, movement, spawning, weight
   simulation.rs     -- Core physics engine, rayon-parallel neutron loop,
-                       two-phase grid updates, per-rod steam forces
+                       two-phase grid updates, channel deformation model
   controls.rs       -- Rod control system, targets, displacer tip,
-                       SCRAM with pressure opposition
+                       SCRAM with channel deformation resistance
   renderer.rs       -- Renderer trait, InputEvent enum
   renderer_tui.rs   -- Console TUI (ratatui + crossterm)
   renderer_gfx.rs   -- Graphical dashboard (macroquad)
@@ -122,7 +122,9 @@ scenarios/
                                key personnel, points of contention,
                                INSAG-1 vs INSAG-7 debate, and sources
   SIMULATION-TRADEOFFS.txt  -- What the sim gets right, what it gets
-                               wrong, and why each tradeoff was made
+                               wrong, why each tradeoff was made,
+                               constants vs. published data, and
+                               what each of the 34 tests validates
 
 .github/workflows/
   release.yml        -- CI pipeline: builds Windows/Linux/macOS binaries,
@@ -134,15 +136,15 @@ scenarios/
 The included scenario recreates the key events of April 25-26, 1986, cross-referenced with the IAEA INSAG-7 report and World Nuclear Association sources:
 
 1. **Normal operation** -- reactor at ~50% power (1,600 MWt) with automatic rod control
-2. **9-hour delay** -- grid controller holds power for evening demand; Xe-135 accumulates
+2. **9-hour delay** -- grid controller holds power for evening demand; Xe-135 in equilibrium at 1,600 MWt
 3. **Power collapse** -- at 00:28, power crashes to 30 MWt (~1%) during control transfer
-4. **Xenon pit** -- Xe-135 poisoning builds rapidly at near-zero power
-5. **Rod withdrawal** -- operators disable auto-control and withdraw nearly all rods to fight xenon (ORM falls to 6-8 rods; minimum required: 15 per INSAG-7)
+4. **Reactivity losses** -- void collapse (less boiling = more water absorption), graphite cooling, and rising Xe-135 all demand rod withdrawal
+5. **Rod withdrawal** -- operators disable auto-control and withdraw nearly all rods against multiple reactivity losses (ORM falls to 6-8 rods; minimum required: 15 per INSAG-7)
 6. **Feedwater increase** -- extra coolant pumps temporarily suppress boiling
 7. **Turbine test begins** -- 01:23:04, coolant pumps coast down as turbine decelerates
-8. **Void coefficient runaway** -- coolant boils, positive feedback loop drives power up
-9. **AZ-5 SCRAM** -- 01:23:40, graphite displacer tips enter core first, causing initial reactivity spike ("positive scram" effect, known since 1983 at Ignalina)
-10. **Rods jam** -- steam pressure in channels pushes rods back up; they oscillate at ~30% insertion (historically ~2-2.5m of 7m travel)
+8. **Void coefficient** -- coolant boils, void fraction rises, positive void coefficient slowly adds reactivity
+9. **AZ-5 pressed** -- 01:23:40, routine or precautionary. Graphite displacer tips enter core first, causing reactivity spike ("positive scram" effect, known since 1983 at Ignalina). This was the trigger for the catastrophic excursion.
+10. **Rods jam** -- power excursion deforms fuel channels, physically jamming rods at ~30% insertion (historically ~2-2.5m of 7m travel)
 11. **Prompt supercritical** -- 01:23:47, power reaches ~30,000 MWt. Two explosions destroy the reactor.
 
 All consequences emerge from the physics engine -- only operator actions are scripted. See `scenarios/CHERNOBYL.txt` for the full historical reference and `scenarios/SIMULATION-TRADEOFFS.txt` for what the simulation gets right vs. where it diverges from reality.
@@ -155,7 +157,7 @@ All consequences emerge from the physics engine -- only operator actions are scr
 | Fission cross-section | `FISSION_PROBABILITY` | 0.20 per cell |
 | Water absorption | `WATER_NEUTRON_ABSORPTION_PROB` | 0.08 per cell |
 | Void coefficient (+2500 pcm) | `VOID_COEFFICIENT_BOOST` | 1.3x |
-| Delayed neutron fraction | `DELAYED_NEUTRON_FRACTION` | 0.0065 |
+| Delayed neutron fraction | `DELAYED_NEUTRON_FRACTION` | 0.005 (burned fuel, Pu mix) |
 | Control rod speed | `SCRAM_ROD_SPEED` | 1.5 rows/s |
 | Displacer tip boost | `DISPLACER_TIP_BOOST` | 1.5x |
 | Displacer tip length | `DISPLACER_TIP_ROWS` | 2 rows |
@@ -165,7 +167,7 @@ All consequences emerge from the physics engine -- only operator actions are scr
 
 ## Creating Custom Scenarios
 
-Scenarios are JSON files with timed events. Rod positions are now **targets** -- rods move gradually toward the specified depth at `ROD_MOVE_SPEED`, with steam pressure affecting the movement:
+Scenarios are JSON files with timed events. Rod positions are **targets** -- rods move gradually toward the specified depth at `ROD_MOVE_SPEED`:
 
 ```json
 {
