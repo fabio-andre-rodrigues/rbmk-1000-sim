@@ -32,7 +32,12 @@ impl Renderer for GfxRenderer {
         // Header
         draw_text("RBMK-1000 REACTOR SIMULATION", 10.0, 20.0, 20.0, GREEN);
         let elapsed = sim.stats.elapsed_time;
-        let time_str = format!("T+{}m {:02}s", (elapsed / 60.0) as u32, (elapsed % 60.0) as u32);
+        let time_str = format!(
+            "T+{}m {:02}s (t={:.0})",
+            (elapsed / 60.0) as u32,
+            (elapsed % 60.0) as u32,
+            elapsed
+        );
         draw_text(&time_str, GRID_PX_W - 80.0, 20.0, 18.0, WHITE);
 
         // Status badge

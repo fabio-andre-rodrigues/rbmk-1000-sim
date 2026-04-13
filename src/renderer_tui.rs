@@ -612,7 +612,10 @@ fn draw_hud(f: &mut Frame, area: Rect, sim: &Simulation) {
                 Span::raw(format!(" (norm: 7.0) Flow: {:.0}%", sim.stats.coolant_flow * 100.0)),
             ])
         },
-        Line::from(format!("Time: {}m {:02}s", mins, secs)),
+        Line::from(format!(
+            "Time: {}m {:02}s  (t={:.0})",
+            mins, secs, elapsed
+        )),
     ];
     let stats_para = Paragraph::new(stats_lines)
         .block(Block::default().title(" Statistics ").borders(Borders::ALL));
