@@ -332,6 +332,239 @@ hydraulics. We use thousands and a 50x20 grid.
 
 
 =====================================================================
+  9. CONSTANTS vs. PUBLISHED DATA
+=====================================================================
+
+  beta_eff
+    Simulator: 0.0050
+    Real RBMK: ~0.005 (burned fuel with Pu-239/241 mix)
+    Source:     INSAG-7; Pu-239 beta ~0.21%, U-235 ~0.65%, weighted
+    Match:      Exact
+
+  lambda_eff
+    Simulator: 0.08 s^-1
+    Real RBMK: ~0.08 (6-group weighted average)
+    Source:     Standard 6-group precursor data
+    Match:      Exact
+
+  nu-bar (neutrons per fission)
+    Simulator: 3
+    Real RBMK: 2.43
+    Source:     Simplified upward for visible chain reactions
+    Match:      Intentional divergence (+23%)
+
+  Void coefficient sign
+    Simulator: +1.3x fission boost in vapor
+    Real RBMK: Positive (+2500 pcm at nominal)
+    Source:     INSAG-7, WNA
+    Match:      Correct sign, simplified magnitude
+
+  Displacer tip effect
+    Simulator: +1.5x at leading 2 rows
+    Real RBMK: Positive reactivity from graphite displacing
+               1.25m water column
+    Source:     INSAG-7 S4.2; Ignalina-1 discovery 1983
+    Match:      Correct mechanism
+
+  SCRAM speed
+    Simulator: 1.5 rows/s (13s full travel)
+    Real RBMK: 0.4 m/s (18-21s for 7m)
+    Source:     INSAG-7
+    Match:      Same order (13s vs 18-21s)
+
+  Xe-135 cross-section
+    Simulator: Absorbs 100% of thermal neutrons hitting xenon cell
+    Real RBMK: 2.6 million barns (strongest known)
+    Source:     Nuclear data tables
+    Match:      Correct behavior (simplified to binary)
+
+  I-135 -> Xe-135 branching
+    Simulator: 95%
+    Real RBMK: ~95% of I-135 decays to Xe-135
+    Source:     Fission product yield data
+    Match:      Exact
+
+  Rod jamming depth
+    Simulator: ~30% (6-7 of 20 rows)
+    Real RBMK: ~30-36% (2-2.5m of 7m)
+    Source:     INSAG-7
+    Match:      Matches
+
+  Rod jamming cause
+    Simulator: Channel deformation at high power
+    Real RBMK: Fuel fragmentation -> channel buckling
+    Source:     INSAG-7
+    Match:      Correct mechanism
+
+  Effective enrichment
+    Simulator: Noted as ~1.3% in comments
+    Real RBMK: ~1.3% at time of accident (burnup)
+    Source:     INSAG-7, WNA
+    Match:      Acknowledged
+
+  Xe/I time compression
+    Simulator: I-135: 5s (real 6.6h), Xe-135: 45s (real 9.2h)
+    Real RBMK: See real values
+    Source:     Compressed ~4700x
+    Match:      Intentional; preserves relative dynamics
+
+
+=====================================================================
+  10. TEST COVERAGE (34 tests)
+=====================================================================
+
+  Neutron physics fundamentals (6 tests)
+  ──────────────────────────────────────
+
+  test_moderator_collision
+    Fast neutron hitting graphite -> thermalized + random scatter
+    direction. Validates the core moderator physics.
+
+  test_u235_fission
+    200 trials of thermal neutron on U-235. Verifies fission is
+    probabilistic (~20% per cell), not guaranteed. Confirms fast
+    neutrons are produced.
+
+  test_absorption_rod_interaction
+    Thermal neutron on boron carbide -> absorbed. Validates
+    shutdown capability.
+
+  test_fast_bypasses_absorption_rod
+    Fast neutron passes through absorber alive. Validates
+    energy-dependent cross-section behavior (B-10 absorption
+    is thermal-dominated).
+
+  test_fast_neutrons_bypass_u235
+    Fast neutron on U-235 -> no fission. Validates that
+    thermalization is required before fission (correct RBMK
+    physics: graphite moderates, not fuel).
+
+  test_neutron_linear_straight_line
+    10 small steps = 1 big step. Verifies deterministic
+    transport between interactions.
+
+
+  Xenon/iodine dynamics (3 tests)
+  ───────────────────────────────
+
+  test_xenon_mechanics
+    Thermal neutron hits Xe-135 cell -> absorbed, cell reverts
+    to U-235. Validates xenon burnoff (the mechanism that makes
+    xenon poisoning self-limiting at power).
+
+  test_xenon_natural_decay
+    Xe-135 cell with timer=1.0 -> decays to U-235 after 1.5s.
+    Validates natural Xe-135 decay (real half-life 9.2h,
+    compressed).
+
+  test_inactive_u235_reactivation
+    Spent fuel cell reactivates after timer, possibly spawning
+    Xe-135 (2% chance). Validates fission product generation.
+
+
+  Water/coolant cycle (3 tests)
+  ─────────────────────────────
+
+  test_water_cycle
+    Warm water cools back to Cool when heat stops. Validates
+    coolant recovery.
+
+  test_vapor_return
+    Vapor condenses to Warm when flow > 0. Validates
+    coolant-flow-dependent condensation.
+
+  test_water_full_cycle
+    Full Cool -> Warm -> Vapor -> Warm -> Cool cycle with
+    correct timers.
+
+
+  Void coefficient (1 test)
+  ─────────────────────────
+
+  test_void_coefficient_increases_fission_rate
+    500 trials each: vapor cells produce statistically more
+    fissions than water cells. Directly validates the positive
+    void coefficient, the key RBMK design flaw. Compares
+    populations, not just signs.
+
+
+  Control rods and displacer tips (6 tests)
+  ─────────────────────────────────────────
+
+  test_scram_activates_gradual_insertion
+    SCRAM at 1.5 rows/s, full insertion in ~13s (not instant).
+    Validates gradual insertion.
+
+  test_scram_gradual_insertion
+    15 seconds of SCRAM with no power excursion -> fully
+    inserted. Validates that rods CAN fully insert when
+    channels are not deforming.
+
+  test_rod_withdrawal_increases_fuel_cells
+    Withdrawing rods exposes more fuel. Validates rod-to-grid
+    sync.
+
+  test_displacer_tip_activates_on_insertion
+    Displacer tip fires on SCRAM, deactivates after timer.
+    Validates the activation/deactivation lifecycle.
+
+  test_displacer_tip_boost_on_scram
+    1.5x fission boost at leading edge rows, no boost above
+    rod or at wrong columns. Validates spatial precision of
+    the positive scram effect.
+
+  test_displacer_boost_at_leading_edge
+    Boost only at rows [depth, depth+2), not above, not beyond.
+    Validates the 2-row tip geometry.
+
+
+  Chain reaction dynamics (1 test)
+  ────────────────────────────────
+
+  test_fission_produces_chain_reaction
+    50 thermal neutrons over 10 frames -> fast neutrons appear
+    (from fission). Validates that the chain reaction
+    bootstraps.
+
+
+  System-level integration (2 tests)
+  ──────────────────────────────────
+
+  test_headless_stability_120s
+    120 seconds at 30fps with auto-control. Validates that the
+    reactor reaches steady-state near 40 act/s without runaway.
+    Prints diagnostics every 5s. Asserts <20% of time above
+    200% power. This is the "does the reactor behave like a
+    controllable reactor" test.
+
+  test_chernobyl_scenario_headless
+    205 seconds of the full Chernobyl scenario. Applies all
+    operator actions from the JSON file. Validates 6 checkpoints
+    that must emerge from physics alone:
+
+      a. Power drops below 100% during rod insertion (t=32-70)
+      b. Xenon builds up (>5 cells)
+      c. Iodine accumulates (>10 total)
+      d. Pressure exceeds 50 MPa during coolant loss
+      e. Power exceeds 200% during void coefficient surge
+      f. SCRAM rods blocked by channel deformation (<20% depth)
+
+    The scenario provides only operator actions. Every checkpoint
+    is an emergent result — not scripted.
+
+
+  Utility tests (12 tests)
+  ────────────────────────
+
+  test_grid_init, test_absorption_rod_columns, test_grid_position,
+  test_neutron_movement, test_neutron_boundary_bounce,
+  test_neutron_spawn_direction, test_activation_rate_ema,
+  test_independent_rod_control, test_zone_mapping,
+  test_rod_position_clamped, test_pause_freezes_simulation,
+  test_sim_speed_multiplier
+
+
+=====================================================================
   REFERENCES
 =====================================================================
 
