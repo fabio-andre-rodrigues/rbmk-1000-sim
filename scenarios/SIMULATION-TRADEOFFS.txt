@@ -112,19 +112,23 @@ hydraulics. We use thousands and a 50x20 grid.
 =====================================================================
 
   REALITY:
-    6 precursor groups with half-lives from 0.2s to 55s. The
-    effective delayed neutron fraction (beta-eff) for the RBMK
-    is 0.0064. These delayed neutrons are what makes a reactor
-    controllable — without them, the generation time would be
-    ~10^-4 seconds (uncontrollable).
+    6 precursor groups with half-lives from 0.2s to 55s. For fresh
+    U-235 fuel, beta-eff is ~0.0064. However, by the time of the
+    Chernobyl accident, significant fuel burnup had produced fissile
+    Pu-239 and Pu-241, which have much lower delayed fractions
+    (~0.21%). The effective beta for the mixed fuel was ~0.005.
+    These delayed neutrons are what makes a reactor controllable —
+    without them, the generation time would be ~10^-4 seconds
+    (uncontrollable).
 
   OUR MODEL:
-    One effective precursor group: beta = 0.0065, lambda = 0.08/s.
+    One effective precursor group: beta = 0.005, lambda = 0.08/s.
     Fission deposits a fraction of its yield into a precursor pool
     that decays into neutrons over time.
 
   WHAT MATCHES:
-    - The delayed fraction (0.65%) matches the real RBMK value.
+    - The delayed fraction (0.50%) matches the burned-fuel RBMK
+      value at the time of the accident.
     - The concept that delayed neutrons make control possible is
       correctly demonstrated — at subcritical/critical states, the
       reactor responds on a seconds timescale, not microseconds.
@@ -149,34 +153,36 @@ hydraulics. We use thousands and a 50x20 grid.
     - 211 control rods total (various groups: manual, shortened
       absorber, automatic regulators).
     - Full insertion time: 18-21 seconds (0.4 m/s).
-    - Rod channel diameter is narrow — water acts as a fluid
-      damper ("dashpot effect").
+    - Control rod channels had separate low-pressure cooling
+      circuits — this water did NOT boil during the accident.
     - The graphite displacer is 4.5m long with a 1.25m water
       column at each end when fully withdrawn.
     - During SCRAM, rods seized at 2-2.5m of 7m travel due to
-      fuel channel deformation and steam pressure.
+      fuel channel deformation from the power excursion —
+      ruptured fuel, swollen pressure tubes, and shifted graphite
+      blocks physically buckled the control rod channels.
 
   OUR MODEL:
     - 5 control rods (one per 10-column zone).
     - SCRAM speed: 1.5 rows/sec (~13s for full insertion).
     - Graphite displacer tip: bottom 2 rows of each rod, with
       a 1.5x reactivity boost during insertion.
-    - Steam pressure opposes rod insertion proportionally to
-      local void fraction and rod depth in channel.
-    - Per-rod steam forces: each rod responds to steam in its
-      own zone independently.
-    - Rods insert to ~30% depth then stall/bounce under steam
-      pressure — matching the historical ~2-2.5m of 7m.
+    - Channel deformation modeled as power-threshold resistance:
+      when per-zone activation rate exceeds a threshold (major
+      power excursion), resistance increases proportionally,
+      slowing and eventually stopping rod insertion.
+    - Rods insert freely at first during SCRAM, then jam once
+      the displacer-tip-induced power excursion deforms channels.
 
   WHAT MATCHES:
     - The "positive scram" mechanism: graphite tips increase
       local reactivity before the boron absorber arrives. This
       is the key Chernobyl mechanism and is correctly modeled.
     - Gradual rod insertion (not instant) with realistic speed.
-    - Steam pressure opposing insertion, with the rod bouncing
-      at a physically motivated equilibrium depth.
-    - Per-zone rod independence: rods in heavily boiling zones
-      stall while rods in cooler zones can still insert.
+    - Channel deformation from the power excursion jams rods at
+      a depth consistent with the historical ~2-2.5m of 7m.
+    - Rod channels move freely during normal operation (separate
+      low-pressure cooling, no steam resistance).
     - The displacer tips are visually distinct (blue vs. red)
       so the user can see them leading the rod into the core.
 
@@ -186,6 +192,10 @@ hydraulics. We use thousands and a 50x20 grid.
       distribution of rods across the real 1,661-channel core.
     - The 1.25m water column gap is abstracted as a 2-row boost
       zone rather than physically modeled as a water displacement.
+    - Channel deformation is modeled as a function of power level
+      rather than explicit fuel mechanics (fragmentation, swelling,
+      tube rupture). The result is correct but the mechanism is
+      simplified.
     - Auto-control uses a simple proportional controller with
       dead-band, not the real LAR/AR-1/AR-2 automatic regulators
       which had their own complex (and buggy) behavior.
@@ -288,7 +298,7 @@ hydraulics. We use thousands and a 50x20 grid.
   3. Rod withdrawal is necessary to overcome xenon
   4. Loss of coolant flow → steam → positive void coefficient → surge
   5. SCRAM with graphite tips → initial reactivity INCREASE
-  6. Steam in channels opposes rod insertion (rods bounce at ~30%)
+  6. Power excursion deforms channels → rods jam at ~30% depth
   7. The disaster emerges as a natural consequence of the RBMK's
      design flaws when combined with the operator actions
 
