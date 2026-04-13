@@ -171,6 +171,9 @@ hydraulics. We use thousands and a 50x20 grid.
       when per-zone activation rate exceeds a threshold (major
       power excursion), resistance increases proportionally,
       slowing and eventually stopping rod insertion.
+    - Rod speed during SCRAM is clamped to >= 0: deformed channels
+      jam rods in place but cannot push them back out (unlike the
+      old steam model, which incorrectly allowed rod reversal).
     - Rods insert freely at first during SCRAM, then jam once
       the displacer-tip-induced power excursion deforms channels.
 

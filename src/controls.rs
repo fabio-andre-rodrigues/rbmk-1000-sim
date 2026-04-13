@@ -178,8 +178,11 @@ impl AbsorptionRodSystem {
         for i in 0..NUM_ABSORPTION_RODS {
             let old_pos = self.positions[i];
 
-            // SCRAM drives down (+), channel deformation resists (-)
-            let net_speed = SCRAM_ROD_SPEED - channel_resistance[i];
+            // SCRAM drives down (+), channel deformation resists that motion.
+            // If resistance exceeds the gravity-driven insertion speed, the rod
+            // stalls instead of reversing direction — a buckled channel jams
+            // the rod in place, it does not push it back out.
+            let net_speed = (SCRAM_ROD_SPEED - channel_resistance[i]).max(0.0);
             self.positions[i] += net_speed * dt;
             self.positions[i] = self.positions[i].clamp(0.0, GRID_ROWS as f32);
 
