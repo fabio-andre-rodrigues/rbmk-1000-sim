@@ -116,12 +116,12 @@
     {
       "time": 142.0,
       "action": { "type": "message" },
-      "message": "This is the 'iodine pit'. At Chernobyl, operators fought this for hours."
+      "message": "This is the 'iodine pit' \u2014 one of several effects that demanded rod withdrawal at Chernobyl."
     },
     {
       "time": 150.0,
       "action": { "type": "set_rods", "depth": 2.0 },
-      "message": "LESSON 6: FIGHTING XENON \u2014 Withdrawing rods to recover power..."
+      "message": "LESSON 6: RECOVERING POWER \u2014 Withdrawing rods against xenon, void collapse, graphite cooling..."
     },
     {
       "time": 158.0,
@@ -171,12 +171,12 @@
     {
       "time": 215.0,
       "action": { "type": "message" },
-      "message": "Steam is building. Void coefficient active. Now press S for SCRAM!"
+      "message": "Void coefficient active. Now press S for SCRAM \u2014 watch the displacer tips spike power!"
     },
     {
       "time": 225.0,
       "action": { "type": "message" },
-      "message": "If you haven't pressed S yet, do it now! Watch the rods bounce..."
+      "message": "If you haven't pressed S yet, do it now! Watch the rods jam..."
     },
     {
       "time": 240.0,
