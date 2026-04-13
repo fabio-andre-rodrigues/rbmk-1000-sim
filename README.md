@@ -6,12 +6,18 @@ A real-time simulation of an RBMK-1000 nuclear reactor core in Rust, featuring a
 ![Rust](https://img.shields.io/badge/rust-2024%20edition-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+## Download
+
+Pre-built binaries for Windows, Linux, and macOS are available on the [Releases](https://github.com/fabio-andre-rodrigues/rbmk-1000-sim/releases) page. Each archive includes the binary, scenario files, and documentation.
+
 ## Features
 
 ### Physics Engine
-- **Agent-based neutron transport** -- individual neutrons tracked as particles with cell-by-cell stepping (no tunneling)
+- **Agent-based neutron transport** -- individual neutrons tracked as particles with cell-by-cell stepping, parallelized across CPU cores via [rayon](https://docs.rs/rayon)
+- **Two-phase parallel architecture** -- neutrons processed against a read-only grid snapshot, then grid mutations applied sequentially with phantom fission filtering
+- **Weighted particles** -- one particle can represent multiple neutrons, reducing allocations while maintaining spatial diversity via weight splitting
 - **Two-state energy model** -- fast (2 MeV) and thermal (0.025 eV) neutrons with distinct interaction rules
-- **U-235 fission** -- probabilistic (20% per cell traversal), producing 3 fast neutrons per event
+- **U-235 fission** -- probabilistic (20% per cell traversal), producing weighted fast neutrons per event
 - **Graphite moderation** -- fast-to-thermal conversion with isotropic scattering at moderator columns
 - **Iodine-135 / Xenon-135 decay chain** -- iodine accumulates during fission, decays into xenon on compressed timescale, creating the "iodine pit" effect
 - **Water cooling** -- cool/warm/vapor state machine with neutron hit counting
@@ -21,36 +27,43 @@ A real-time simulation of an RBMK-1000 nuclear reactor core in Rust, featuring a
 
 ### Control Systems
 - **Independent per-zone rod control** -- 5 absorption rods, each responding to its own zone's activation rate with dead-band and EMA smoothing
-- **Gradual SCRAM** -- rods insert at realistic speed (1.5 rows/s, ~13s full insertion) instead of instantly
-- **Graphite displacer tip effect** -- brief reactivity spike at the rod's leading edge during insertion (the Chernobyl mechanism)
-- **Steam pressure opposes SCRAM** -- high pressure physically pushes rods back up, preventing full insertion
-- **Coolant flow control** -- adjustable pump flow rate affecting water cooling and vapor return
+- **Gradual rod movement** -- scenario-driven rods move toward targets at realistic speed, not instantly
+- **Gradual SCRAM** -- rods insert at 1.5 rows/s (~13s full insertion) with gravity-driven mechanics
+- **Graphite displacer tip effect** -- brief reactivity spike at the rod's leading edge during insertion (the Chernobyl mechanism), rendered in distinct blue color
+- **Per-rod steam pressure** -- each rod's upward steam force derived from local zone void fraction and rod depth in channel. Rods in heavily boiling zones stall independently while cooler zones can still insert. Steam always pushes UP: opposes insertion, assists withdrawal.
+- **SCRAM rod bouncing** -- at extreme void fractions, rods insert to ~30% (6-7 rows) then oscillate as steam pressure fights gravity, matching the historical 2-2.5m of 7m travel at Chernobyl
+- **Coolant flow control** -- adjustable pump flow rate affecting water cooling, vapor return, and local rod steam forces
 
 ### Visualization
-- **TUI renderer** (ratatui + crossterm) -- colored Unicode grid, real-time HUD with statistics, legend, and keyboard controls. Adapts to terminal size with dynamic cell width.
+- **TUI renderer** (ratatui + crossterm) -- colored Unicode grid, real-time HUD with statistics and keyboard controls. Adapts to terminal size with dynamic cell width.
 - **Graphical renderer** (macroquad) -- pixel-perfect grid with dashboard panel featuring arc gauges (pressure, power, coolant), rod position bars, stat bars, and blinking SCRAM indicator.
 - **Gas transparency overlays** -- iodine (orange tint, intensity scales with concentration) and xenon (purple tint, fades as it decays) shown as semi-transparent layers over fuel cells.
+- **Toggle-able color legend** -- press `L` to show/hide a detailed panel with actual render-color swatches for all cell types, water states, gas overlays, and neutron types (both renderers).
+- **Graphite tip visualization** -- the bottom 2 rows of each control rod rendered in blue (graphite displacer) vs red (boron absorber), making the fatal design flaw visible.
 
 ### Scenario System
-- **JSON scenario files** -- timed sequences of operator actions (rod positions, auto-control, coolant flow)
+- **JSON scenario files** -- timed sequences of operator actions (rod targets, auto-control, coolant flow)
+- **Gradual rod movement** -- `set_rods` events set targets that rods move toward at realistic speed, with steam pressure assisting withdrawal and opposing insertion
 - **Physics-driven consequences** -- scenarios only script what operators did; the simulation physics produces the disaster naturally
-- **Chernobyl scenario included** -- recreates the April 26, 1986 disaster sequence with historically accurate operator actions
+- **Chernobyl scenario included** -- recreates the April 26, 1986 disaster sequence with historically accurate operator actions, cross-referenced with INSAG-7 and WNA sources
 
 ## Quick Start
 
 ```bash
 # TUI mode (default, runs in terminal)
-cargo run
+cargo run --release
 
 # TUI mode with Chernobyl scenario
-cargo run -- --scenario scenarios/chernobyl.json
+cargo run --release -- --scenario scenarios/chernobyl.json
 
 # Graphical mode
-cargo run --features gfx -- --gfx
+cargo run --release --no-default-features --features gfx -- --gfx
 
 # Graphical mode with Chernobyl scenario
-cargo run --features gfx -- --gfx --scenario scenarios/chernobyl.json
+cargo run --release --no-default-features --features gfx -- --gfx --scenario scenarios/chernobyl.json
 ```
+
+Or download a pre-built binary from [Releases](https://github.com/fabio-andre-rodrigues/rbmk-1000-sim/releases).
 
 ## Controls
 
@@ -64,6 +77,7 @@ cargo run --features gfx -- --gfx --scenario scenarios/chernobyl.json
 | A | Toggle automatic rod control |
 | + / - | Simulation speed (0.25x - 4x) |
 | N | Inject 5 neutrons |
+| L | Toggle color legend |
 | Q / Esc | Quit |
 
 ## Grid Legend
@@ -75,12 +89,15 @@ cargo run --features gfx -- --gfx --scenario scenarios/chernobyl.json
 | Orange tint | Orange overlay | Iodine-135 gas (precursor to xenon) |
 | Purple tint | Purple overlay | Xenon-135 gas (neutron poison) |
 | Double line | Blue | Graphite moderator rod |
-| Dense block | Red | Absorption control rod |
-| Background | Blue | Cool water |
-| Background | Red | Warm water |
+| Dense block | Red | Boron carbide absorber (control rod body) |
+| Dense block | Blue | Graphite displacer tip (rod leading edge) |
+| Background | Dark blue | Cool water |
+| Background | Dark red | Warm water |
 | Background | Black | Vapor (no water -- void coefficient active) |
 | Dot | White | Fast neutron |
 | Dot | Gray | Thermal neutron |
+
+Press `L` in-game to see these with actual render colors.
 
 ## Architecture
 
@@ -89,40 +106,50 @@ src/
   main.rs           -- Entry point, game loop, CLI routing
   config.rs         -- All physics constants with real-world references
   grid.rs           -- Grid, CellState, WaterState, iodine tracking
-  neutron.rs        -- Neutron struct, movement, spawning
-  simulation.rs     -- Core physics engine, all interactions
-  controls.rs       -- Rod control system, PID, displacer tip
+  neutron.rs        -- Neutron struct, movement, spawning, weight
+  simulation.rs     -- Core physics engine, rayon-parallel neutron loop,
+                       two-phase grid updates, per-rod steam forces
+  controls.rs       -- Rod control system, targets, displacer tip,
+                       SCRAM with pressure opposition
   renderer.rs       -- Renderer trait, InputEvent enum
   renderer_tui.rs   -- Console TUI (ratatui + crossterm)
   renderer_gfx.rs   -- Graphical dashboard (macroquad)
   scenario.rs       -- JSON scenario loader and event system
 
 scenarios/
-  chernobyl.json    -- Chernobyl disaster recreation
+  chernobyl.json            -- Chernobyl disaster recreation
+  CHERNOBYL.txt             -- Full historical reference with timeline,
+                               key personnel, points of contention,
+                               INSAG-1 vs INSAG-7 debate, and sources
+  SIMULATION-TRADEOFFS.txt  -- What the sim gets right, what it gets
+                               wrong, and why each tradeoff was made
+
+.github/workflows/
+  release.yml        -- CI pipeline: builds Windows/Linux/macOS binaries,
+                        packages with scenarios and docs, creates release
 ```
 
 ## Chernobyl Scenario
 
-The included scenario recreates the key events of April 25-26, 1986:
+The included scenario recreates the key events of April 25-26, 1986, cross-referenced with the IAEA INSAG-7 report and World Nuclear Association sources:
 
-1. **Normal operation** -- reactor at ~100% power with automatic rod control
-2. **Power reduction** -- rods inserted to reduce power for turbine test
-3. **Over-insertion** -- operator error drops power too far, xenon builds up
-4. **Rod withdrawal** -- operators disable auto-control and withdraw nearly all rods to fight xenon poisoning (violating the 30-rod minimum safety rule)
-5. **Feedwater increase** -- extra coolant pumps temporarily stabilize the reactor
-6. **Turbine test begins** -- coolant flow drops as pumps lose power
-7. **Void coefficient runaway** -- water boils, positive feedback loop increases power
-8. **AZ-5 SCRAM** -- emergency button pressed, but graphite displacer tips cause initial reactivity spike
-9. **Steam pressure blocks rods** -- pressure pushes control rods back up, preventing shutdown
-10. **Prompt supercritical excursion** -- reactor destroyed
+1. **Normal operation** -- reactor at ~50% power (1,600 MWt) with automatic rod control
+2. **9-hour delay** -- grid controller holds power for evening demand; Xe-135 accumulates
+3. **Power collapse** -- at 00:28, power crashes to 30 MWt (~1%) during control transfer
+4. **Xenon pit** -- Xe-135 poisoning builds rapidly at near-zero power
+5. **Rod withdrawal** -- operators disable auto-control and withdraw nearly all rods to fight xenon (ORM falls to 6-8 rods; minimum required: 15 per INSAG-7)
+6. **Feedwater increase** -- extra coolant pumps temporarily suppress boiling
+7. **Turbine test begins** -- 01:23:04, coolant pumps coast down as turbine decelerates
+8. **Void coefficient runaway** -- coolant boils, positive feedback loop drives power up
+9. **AZ-5 SCRAM** -- 01:23:40, graphite displacer tips enter core first, causing initial reactivity spike ("positive scram" effect, known since 1983 at Ignalina)
+10. **Rods jam** -- steam pressure in channels pushes rods back up; they oscillate at ~30% insertion (historically ~2-2.5m of 7m travel)
+11. **Prompt supercritical** -- 01:23:47, power reaches ~30,000 MWt. Two explosions destroy the reactor.
 
-All consequences emerge from the physics engine -- only operator actions are scripted.
+All consequences emerge from the physics engine -- only operator actions are scripted. See `scenarios/CHERNOBYL.txt` for the full historical reference and `scenarios/SIMULATION-TRADEOFFS.txt` for what the simulation gets right vs. where it diverges from reality.
 
 ## Physics Model
 
-The simulation uses simplified but physically grounded models based on real RBMK-1000 parameters:
-
-| Real Parameter | Sim Parameter | Value |
+| Real Parameter | Sim Constant | Value |
 |---|---|---|
 | Neutrons per fission (nu-bar = 2.43) | `NEUTRONS_PER_FISSION` | 3 |
 | Fission cross-section | `FISSION_PROBABILITY` | 0.20 per cell |
@@ -131,12 +158,14 @@ The simulation uses simplified but physically grounded models based on real RBMK
 | Delayed neutron fraction | `DELAYED_NEUTRON_FRACTION` | 0.0065 |
 | Control rod speed | `SCRAM_ROD_SPEED` | 1.5 rows/s |
 | Displacer tip boost | `DISPLACER_TIP_BOOST` | 1.5x |
-| Xe-135 decay | `XENON_DECAY_SECS` | 45s (compressed) |
-| I-135 decay rate | `IODINE_DECAY_RATE` | 0.14/s (compressed) |
+| Displacer tip length | `DISPLACER_TIP_ROWS` | 2 rows |
+| Weight split threshold | `WEIGHT_SPLIT_THRESHOLD` | 2.0 |
+| Xe-135 decay | `XENON_DECAY_SECS` | 45s (compressed from 9.2h) |
+| I-135 decay rate | `IODINE_DECAY_RATE` | 0.14/s (compressed from 6.6h) |
 
 ## Creating Custom Scenarios
 
-Scenarios are JSON files with timed events:
+Scenarios are JSON files with timed events. Rod positions are now **targets** -- rods move gradually toward the specified depth at `ROD_MOVE_SPEED`, with steam pressure affecting the movement:
 
 ```json
 {
@@ -152,7 +181,7 @@ Scenarios are JSON files with timed events:
     {
       "time": 10.0,
       "action": { "type": "set_rods", "depth": 8.0 },
-      "message": "Inserting rods..."
+      "message": "Inserting rods (gradual)..."
     },
     {
       "time": 20.0,
@@ -179,19 +208,26 @@ Requires Rust 1.85+ (2024 edition).
 cargo build --release
 
 # With graphical renderer
-cargo build --release --features gfx
+cargo build --release --no-default-features --features gfx
 
-# Run tests (34 tests including headless scenario validation)
+# Run tests (34 tests including headless 120s stability + full Chernobyl scenario)
 cargo test
+```
+
+Optional: install [sccache](https://github.com/mozilla/sccache) for faster rebuilds:
+```bash
+cargo install sccache
+export RUSTC_WRAPPER=sccache  # add to shell profile
 ```
 
 ## References
 
-- [RBMK Reactor Design](https://en.wikipedia.org/wiki/RBMK)
-- [Chernobyl Accident Sequence](https://en.wikipedia.org/wiki/Chernobyl_disaster)
-- [Xenon-135 Reactor Poisoning](https://en.wikipedia.org/wiki/Iodine_pit)
-- [Positive Void Coefficient](https://en.wikipedia.org/wiki/Void_coefficient)
+- [IAEA INSAG-7 (1992) -- "The Chernobyl Accident: Updating of INSAG-1"](https://pub.iaea.org/MTCD/publications/PDF/Pub913e_web.pdf)
+- [World Nuclear Association -- Chernobyl Accident 1986](https://world-nuclear.org/information-library/safety-and-security/safety-of-plants/chernobyl-accident)
+- [World Nuclear Association -- Sequence of Events](https://world-nuclear.org/information-library/appendices/chernobyl-accident-appendix-1-sequence-of-events)
+- [World Nuclear Association -- RBMK Reactors](https://world-nuclear.org/information-library/appendices/rbmk-reactors)
+- [OECD NEA -- Chernobyl: The Site and Accident Sequence](https://www.oecd-nea.org/jcms/pl_28271/chernobyl-chapter-i-the-site-and-accident-sequence)
 
 ## Disclaimer
 
-This is an educational simulation. The physics are simplified for real-time visualization. It is not a nuclear safety analysis tool.
+This is an educational simulation. The physics are simplified for real-time visualization. It is not a nuclear safety analysis tool. See `scenarios/SIMULATION-TRADEOFFS.txt` for a detailed analysis of where the model matches and diverges from reality.
