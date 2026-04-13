@@ -94,6 +94,8 @@ jobs:
           echo "Bump: $BUMP  $CURRENT → $NEXT"
 
   # ── Step 2: Update Cargo.toml and commit ──────────────────────
+  # Requires RELEASE_TOKEN secret (PAT with repo + contents:write)
+  # to bypass branch protection on main.
   update-cargo:
     name: "2. Update Cargo.toml"
     needs: version
@@ -101,6 +103,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Bump version in Cargo.toml
         run: |
@@ -224,6 +228,7 @@ jobs:
           path: ${{ matrix.archive }}
 
   # ── Step 5: Create git tag ────────────────────────────────────
+  # Uses RELEASE_TOKEN to push tag past branch protection.
   tag:
     name: "5. Tag"
     needs: [version, build]
@@ -233,6 +238,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Create annotated tag
         run: |
