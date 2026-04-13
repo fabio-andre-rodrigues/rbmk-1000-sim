@@ -26,12 +26,12 @@
     {
       "time": 32.0,
       "action": { "type": "set_rods", "depth": 10.0 },
-      "message": "Power COLLAPSES to 30 MWt (~1%)! Setpoint error."
+      "message": "Setpoint error \u2014 rods driving deep, power dropping..."
     },
     {
       "time": 45.0,
       "action": { "type": "message" },
-      "message": "Near-zero power. Void collapse + graphite cooling absorb reactivity."
+      "message": "Power suppressed. Void collapse + graphite cooling absorb reactivity."
     },
     {
       "time": 47.0,
@@ -46,7 +46,7 @@
     {
       "time": 70.0,
       "action": { "type": "message" },
-      "message": "01:00 \u2014 Stabilized at 200 MWt (6%). ORM already violated."
+      "message": "01:00 \u2014 Power low but unstable. ORM already violated."
     },
     {
       "time": 72.0,
@@ -101,7 +101,7 @@
     {
       "time": 150.0,
       "action": { "type": "message" },
-      "message": "01:23:30 \u2014 Parameters shifting. Void coefficient slowly adding reactivity."
+      "message": "01:23:30 \u2014 Void coefficient feedback accelerating. Power well above nominal."
     },
     {
       "time": 160.0,
@@ -121,7 +121,7 @@
     {
       "time": 178.0,
       "action": { "type": "message" },
-      "message": "01:23:43 \u2014 Power exceeds 530 MWt. Fuel rods fracturing!"
+      "message": "01:23:43 \u2014 Power surge continues. Fuel under extreme stress!"
     },
     {
       "time": 184.0,
@@ -131,7 +131,7 @@
     {
       "time": 190.0,
       "action": { "type": "message" },
-      "message": "01:23:47 \u2014 PROMPT SUPERCRITICAL \u2014 Power reaches ~30,000 MWt"
+      "message": "01:23:47 \u2014 PROMPT SUPERCRITICAL \u2014 Reactor beyond any recovery."
     },
     {
       "time": 200.0,

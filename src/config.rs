@@ -91,10 +91,13 @@ pub const VOID_COEFFICIENT_BOOST: f32 = 1.3;
 // control rod channels. This is what jammed the rods at Chernobyl
 // (INSAG-7), NOT steam pressure in the rod channels (which had
 // separate low-pressure cooling circuits that did not boil).
-// Resistance activates per-zone when zone activation rate exceeds
-// this threshold, and scales with power above it.
-pub const CHANNEL_DEFORM_ZONE_THRESHOLD: f32 = 20.0; // act/s per zone (~2.5x normal)
-pub const CHANNEL_DEFORM_GAIN: f32 = 1.5;
+// Deformation accumulates per-zone when zone activation rate exceeds
+// this threshold. Once buckled, channels stay buckled (ratchet).
+pub const CHANNEL_DEFORM_ZONE_THRESHOLD: f32 = 15.0; // act/s per zone (~1.9x normal)
+// Accumulation RATE (deformation-units per second per unit of
+// normalized excess). At zone_rate=28, excess=13:
+//   rate = (13/15)*0.3 = 0.26/s → jam at ~5.8s → ~30% depth.
+pub const CHANNEL_DEFORM_GAIN: f32 = 0.3;
 
 // === Power Display ===
 pub const POWER_PER_ACTIVATION: f32 = 80.0; // 3200/40

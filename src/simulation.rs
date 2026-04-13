@@ -121,6 +121,10 @@ pub struct Simulation {
     /// Fission deposits beta_eff fraction of neutrons here.
     /// Decays at lambda_eff rate, spawning thermal neutrons.
     pub delayed_precursor_pool: f32,
+    /// Accumulated channel deformation per rod zone. Ratchets up
+    /// during a power excursion, never decreases — a buckled
+    /// channel does not un-buckle. Units match rod speed (rows/s).
+    pub channel_deformation: [f32; NUM_ABSORPTION_RODS],
 }
 
 impl Simulation {
@@ -133,6 +137,7 @@ impl Simulation {
             scenario_message: None,
             spontaneous_source_accumulator: 0.0,
             delayed_precursor_pool: 0.0,
+            channel_deformation: [0.0; NUM_ABSORPTION_RODS],
         }
     }
 
@@ -246,8 +251,9 @@ impl Simulation {
         // buckling physically jam the rods (INSAG-7). The control
         // rod channels had separate cooling that did NOT boil.
         if self.rods.scram_active {
-            let channel_resistance = self.compute_channel_deformation();
-            self.rods.update_scram(dt, &channel_resistance);
+            self.accumulate_channel_deformation(dt);
+            let resistance = self.channel_deformation;
+            self.rods.update_scram(dt, &resistance);
         }
 
         // Sync rod positions to grid cells
@@ -591,7 +597,7 @@ impl Simulation {
         self.stats.pressure_mpa = raw_pressure.min(200.0); // cap for display
     }
 
-    /// Per-rod channel resistance from fuel channel deformation.
+    /// Accumulate per-rod channel deformation from the power excursion.
     ///
     /// During a power excursion, fuel rods fragment and swell,
     /// pressure tubes rupture, and graphite blocks shift — physically
@@ -600,32 +606,31 @@ impl Simulation {
     /// in the rod channels (which had separate low-pressure cooling
     /// circuits that did not boil).
     ///
-    /// Resistance scales with local power (per-zone activation rate):
-    /// channels only deform during a major power excursion, not
-    /// during normal operation. Rods insert freely at first, then
-    /// jam as the excursion (triggered by the displacer tips and
-    /// void coefficient) deforms the channels.
+    /// Deformation ACCUMULATES over time (ratchets up, never decreases)
+    /// — a buckled channel does not un-buckle when power drops.
+    /// Rods insert freely at first during SCRAM, then progressively
+    /// jam as the excursion deforms channels over several seconds.
     ///
     /// Real RBMK rods reached ~2-2.5m of their 7m travel before
     /// channel deformation physically stopped them.
-    fn compute_channel_deformation(&self) -> [f32; NUM_ABSORPTION_RODS] {
-        let mut resistance = [0.0_f32; NUM_ABSORPTION_RODS];
+    fn accumulate_channel_deformation(&mut self, dt: f32) {
         let threshold = CHANNEL_DEFORM_ZONE_THRESHOLD;
 
         for i in 0..NUM_ABSORPTION_RODS {
             let zone_rate = self.stats.zone_rates[i];
             if zone_rate > threshold {
                 let excess = zone_rate - threshold;
-                // Resistance grows with power above threshold.
-                // At ~1.67x threshold, resistance matches SCRAM speed
-                // and rods stall — matching the historical ~30% depth.
-                resistance[i] = (excess / threshold
-                    * SCRAM_ROD_SPEED
-                    * CHANNEL_DEFORM_GAIN)
-                    .min(SCRAM_ROD_SPEED * 2.0);
+                // Deformation accumulates proportional to power excess.
+                // At zone_rate=28, threshold=15: rate = (13/15)*0.3 = 0.26/s
+                // After ~5.8s: deformation = 1.5 = SCRAM speed → rod jams.
+                self.channel_deformation[i] +=
+                    (excess / threshold) * CHANNEL_DEFORM_GAIN * dt;
             }
+            // Buckled channels stay buckled — deformation never decreases.
+            // Cap at 2x SCRAM speed to avoid unbounded growth.
+            self.channel_deformation[i] =
+                self.channel_deformation[i].min(SCRAM_ROD_SPEED * 2.0);
         }
-        resistance
     }
 }
 
@@ -1425,7 +1430,7 @@ mod tests {
         let mut max_pressure = 0.0_f32;
         let mut max_act_rate = 0.0_f32;
         let mut max_neutrons = 0_usize;
-        let mut scram_rod_min = f32::MAX; // lowest rod % after SCRAM
+        let mut scram_rod_max = 0.0_f32; // highest rod % after SCRAM
 
         eprintln!("t(s)  | act/s |  pwr% | P(MPa)| neut  | rods% |   Xe | I-135 |  vap | flow% | event");
         eprintln!("------|-------|-------|-------|-------|-------|------|-------|------|-------|------");
@@ -1453,9 +1458,9 @@ mod tests {
             if t > 32.0 && t < 70.0 && power_pct < min_power_during_insertion {
                 min_power_during_insertion = power_pct;
             }
-            // Track rod depth after SCRAM (t>163)
-            if t > 163.0 && rod_pct < scram_rod_min {
-                scram_rod_min = rod_pct;
+            // Track max rod depth after SCRAM (t>163)
+            if t > 163.0 && rod_pct > scram_rod_max {
+                scram_rod_max = rod_pct;
             }
 
             // Print every 1 second
@@ -1489,7 +1494,7 @@ mod tests {
         eprintln!("Max activation rate: {:.1} act/s", max_act_rate);
         eprintln!("Max pressure: {:.1} MPa", max_pressure);
         eprintln!("Max neutrons: {}", max_neutrons);
-        eprintln!("Rod depth after SCRAM (min %): {:.0}%", scram_rod_min);
+        eprintln!("Rod depth after SCRAM (max %): {:.0}%", scram_rod_max);
 
         eprintln!("\n=== EXPECTED vs ACTUAL ===");
         let checks = [
@@ -1503,8 +1508,8 @@ mod tests {
              max_pressure > 50.0),
             ("Power should exceed 200% during void coefficient surge",
              max_act_rate > TARGET_ACTIVATIONS_PER_SEC * 2.0),
-            ("SCRAM rods should be blocked by channel deformation (<20% insertion)",
-             scram_rod_min < 20.0),
+            ("SCRAM rods should jam from channel deformation (<60% insertion)",
+             scram_rod_max < 60.0),
         ];
 
         for (desc, passed) in &checks {
@@ -1520,4 +1525,5 @@ mod tests {
             checks.len(),
         );
     }
+
 }

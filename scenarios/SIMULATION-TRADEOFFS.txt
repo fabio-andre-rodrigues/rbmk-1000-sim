@@ -167,14 +167,15 @@ hydraulics. We use thousands and a 50x20 grid.
     - SCRAM speed: 1.5 rows/sec (~13s for full insertion).
     - Graphite displacer tip: bottom 2 rows of each rod, with
       a 1.5x reactivity boost during insertion.
-    - Channel deformation modeled as power-threshold resistance:
+    - Channel deformation modeled as accumulated resistance:
       when per-zone activation rate exceeds a threshold (major
-      power excursion), resistance increases proportionally,
-      slowing and eventually stopping rod insertion.
-    - Rod speed during SCRAM is clamped to >= 0: a buckled channel
-      jams the rod in place but cannot push it back out.
-    - Rods insert freely at first during SCRAM, then jam once
-      the displacer-tip-induced power excursion deforms channels.
+      power excursion), deformation RATCHETS up over time —
+      a buckled channel does not un-buckle when power drops.
+    - Rod speed during SCRAM is clamped to >= 0: deformed channels
+      jam rods in place but cannot push them back out.
+    - Rods insert freely at first during SCRAM, then progressively
+      jam over ~5-6 seconds as the excursion deforms channels,
+      reaching ~30% depth — matching the historical 2-2.5m of 7m.
 
   WHAT MATCHES:
     - The "positive scram" mechanism: graphite tips increase
