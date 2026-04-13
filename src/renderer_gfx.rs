@@ -59,6 +59,11 @@ impl Renderer for GfxRenderer {
             draw_text(msg, 8.0, msg_y + 16.0, 16.0, YELLOW);
         }
 
+        // Legend overlay (toggled with L)
+        if sim.stats.show_legend {
+            render_legend_panel();
+        }
+
         // Status bar: Auto/Speed + Controls
         let bar_y = screen_height() - 20.0;
         draw_rectangle(0.0, bar_y - 4.0, screen_width(), 24.0, Color::new(0.06, 0.06, 0.1, 1.0));
@@ -75,7 +80,7 @@ impl Renderer for GfxRenderer {
         );
 
         draw_text(
-            "Space=Pause  S=SCRAM  R=Reset  Up/Dn=Rods  Lt/Rt=Coolant  A=Auto  +/-=Speed  N=Neutrons  Q=Quit",
+            "Space=Pause  S=SCRAM  R=Reset  Up/Dn=Rods  Lt/Rt=Coolant  A=Auto  +/-=Speed  N=Neutrons  L=Legend  Q=Quit",
             185.0, bar_y + 12.0, 12.0, Color::new(0.4, 0.4, 0.5, 1.0),
         );
 
@@ -95,6 +100,7 @@ impl Renderer for GfxRenderer {
         if is_key_pressed(KeyCode::Equal) { return Ok(Some(InputEvent::SpeedUp)); }
         if is_key_pressed(KeyCode::Minus) { return Ok(Some(InputEvent::SpeedDown)); }
         if is_key_pressed(KeyCode::N) { return Ok(Some(InputEvent::InjectNeutrons)); }
+        if is_key_pressed(KeyCode::L) { return Ok(Some(InputEvent::ToggleLegend)); }
         if is_key_pressed(KeyCode::Right) { return Ok(Some(InputEvent::CoolantFlowUp)); }
         if is_key_pressed(KeyCode::Left) { return Ok(Some(InputEvent::CoolantFlowDown)); }
         Ok(None)
@@ -121,6 +127,17 @@ fn get_status(sim: &Simulation) -> (&'static str, Color) {
 }
 
 fn render_grid(sim: &Simulation) {
+    // Build graphite displacer tip map
+    let mut is_graphite_tip = [[false; GRID_COLS]; GRID_ROWS];
+    for i in 0..NUM_ABSORPTION_RODS {
+        let rod_col = sim.rods.rod_columns[i];
+        let depth = sim.rods.positions[i] as usize;
+        let tip_start = depth.saturating_sub(DISPLACER_TIP_ROWS);
+        for row in tip_start..depth {
+            is_graphite_tip[row][rod_col] = true;
+        }
+    }
+
     for row in 0..GRID_ROWS {
         for col in 0..GRID_COLS {
             let x = col as f32 * CELL_SIZE;
@@ -133,13 +150,20 @@ fn render_grid(sim: &Simulation) {
             };
             draw_rectangle(x, y, CELL_SIZE, CELL_SIZE, bg);
 
-            // Base cell color
+            // Base cell color — graphite displacer tips are blue,
+            // boron carbide absorber body is dark red.
             let color = match sim.grid.cells[row][col] {
                 CellState::Uranium235Active => GREEN,
                 CellState::Uranium235Inactive { .. } => DARKGRAY,
-                CellState::Xenon135 { .. } => GREEN, // fuel still there under xenon
+                CellState::Xenon135 { .. } => GREEN,
                 CellState::ModeratorRod => DARKBLUE,
-                CellState::AbsorptionRod => MAROON,
+                CellState::AbsorptionRod => {
+                    if is_graphite_tip[row][col] {
+                        Color::new(0.25, 0.4, 0.85, 1.0) // graphite tip
+                    } else {
+                        MAROON // boron absorber
+                    }
+                }
                 CellState::Empty => Color::new(0.0, 0.0, 0.0, 0.0),
             };
 
@@ -178,6 +202,95 @@ fn render_neutrons(neutrons: &[crate::neutron::Neutron]) {
         };
         draw_circle(n.x, n.y + HEADER_H, 2.0, color);
     }
+}
+
+fn render_legend_panel() {
+    let panel_w = 240.0;
+    let panel_h = 410.0;
+    let px = screen_width() - panel_w - 10.0;
+    let py = HEADER_H + 10.0;
+    let swatch = 18.0;
+    let row_h = 22.0;
+    let label_color = Color::new(0.8, 0.8, 0.85, 1.0);
+    let section_color = Color::new(0.5, 0.5, 0.6, 1.0);
+
+    // Background
+    draw_rectangle(px, py, panel_w, panel_h, Color::new(0.08, 0.08, 0.12, 0.92));
+    draw_rectangle_lines(px, py, panel_w, panel_h, 1.0, Color::new(0.3, 0.3, 0.4, 1.0));
+    draw_text("LEGEND (L)", px + 8.0, py + 18.0, 16.0, WHITE);
+
+    let mut y = py + 32.0;
+
+    // --- Cell Types ---
+    draw_text("CELL TYPES", px + 8.0, y, 13.0, section_color);
+    y += row_h;
+
+    // U-235 active
+    draw_rectangle(px + 10.0, y - 12.0, swatch, swatch - 4.0, GREEN);
+    draw_text("U-235 (active)", px + 36.0, y, 14.0, label_color);
+    y += row_h;
+
+    // U-235 spent
+    draw_rectangle(px + 10.0, y - 12.0, swatch, swatch - 4.0, DARKGRAY);
+    draw_text("U-235 (spent)", px + 36.0, y, 14.0, label_color);
+    y += row_h;
+
+    // Graphite moderator
+    draw_rectangle(px + 10.0, y - 12.0, swatch, swatch - 4.0, DARKBLUE);
+    draw_text("Graphite moderator", px + 36.0, y, 14.0, label_color);
+    y += row_h;
+
+    // Boron absorber
+    draw_rectangle(px + 10.0, y - 12.0, swatch, swatch - 4.0, MAROON);
+    draw_text("Boron absorber", px + 36.0, y, 14.0, label_color);
+    y += row_h;
+
+    // Graphite displacer tip
+    draw_rectangle(px + 10.0, y - 12.0, swatch, swatch - 4.0, Color::new(0.25, 0.4, 0.85, 1.0));
+    draw_text("Graphite tip", px + 36.0, y, 14.0, label_color);
+    y += row_h + 6.0;
+
+    // --- Water / Coolant ---
+    draw_text("WATER / COOLANT", px + 8.0, y, 13.0, section_color);
+    y += row_h;
+
+    draw_rectangle(px + 10.0, y - 12.0, swatch, swatch - 4.0, Color::new(0.0, 0.0, 0.35, 1.0));
+    draw_text("Cool water", px + 36.0, y, 14.0, label_color);
+    y += row_h;
+
+    draw_rectangle(px + 10.0, y - 12.0, swatch, swatch - 4.0, Color::new(0.4, 0.0, 0.0, 1.0));
+    draw_text("Warm water", px + 36.0, y, 14.0, label_color);
+    y += row_h;
+
+    draw_rectangle(px + 10.0, y - 12.0, swatch, swatch - 4.0, BLACK);
+    draw_rectangle_lines(px + 10.0, y - 12.0, swatch, swatch - 4.0, 1.0, GRAY);
+    draw_text("Steam (void)", px + 36.0, y, 14.0, label_color);
+    y += row_h + 6.0;
+
+    // --- Gas Overlays ---
+    draw_text("GAS OVERLAYS", px + 8.0, y, 13.0, section_color);
+    y += row_h;
+
+    // Xenon-135
+    draw_rectangle(px + 10.0, y - 12.0, swatch, swatch - 4.0, Color::new(0.7, 0.0, 0.9, 0.7));
+    draw_text("Xenon-135", px + 36.0, y, 14.0, label_color);
+    y += row_h;
+
+    // Iodine-135
+    draw_rectangle(px + 10.0, y - 12.0, swatch, swatch - 4.0, Color::new(1.0, 0.6, 0.0, 0.7));
+    draw_text("Iodine-135", px + 36.0, y, 14.0, label_color);
+    y += row_h + 6.0;
+
+    // --- Neutrons ---
+    draw_text("NEUTRONS", px + 8.0, y, 13.0, section_color);
+    y += row_h;
+
+    draw_circle(px + 18.0, y - 5.0, 3.0, WHITE);
+    draw_text("Fast (2 MeV)", px + 36.0, y, 14.0, label_color);
+    y += row_h;
+
+    draw_circle(px + 18.0, y - 5.0, 3.0, Color::new(0.5, 0.5, 0.5, 1.0));
+    draw_text("Thermal (0.025 eV)", px + 36.0, y, 14.0, label_color);
 }
 
 // === Dashboard ===

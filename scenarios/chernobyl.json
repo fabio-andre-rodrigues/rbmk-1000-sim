@@ -1,6 +1,6 @@
 {
   "name": "Chernobyl - April 26, 1986",
-  "description": "RBMK-1000 Unit 4 disaster. Operators conducting a turbine rundown test reduced power too far, causing xenon poisoning. They withdrew nearly all control rods to compensate, then lost coolant flow during the test. The positive void coefficient and graphite displacer tips did the rest.",
+  "description": "RBMK-1000 Unit 4 disaster. During a turbine rundown test, operators reduced power but it unexpectedly collapsed to 30 MWt. Fighting xenon poisoning, they withdrew nearly all control rods — ORM fell to 6-8 rods (minimum 15 required). When coolant flow dropped during the test, the positive void coefficient caused a power surge. AZ-5 was pressed but the graphite displacer tips triggered a further spike. Steam jammed the rods at ~2m of 7m travel. Prompt supercritical excursion destroyed the reactor.",
   "initial": {
     "seed_neutrons": 30,
     "auto_control": true,
@@ -11,122 +11,132 @@
     {
       "time": 5.0,
       "action": { "type": "message" },
-      "message": "25 APR 23:10 - Reactor at 50% power, preparing turbine test"
+      "message": "25 APR 23:10 \u2014 Power reduction resumes from 1,600 MWt (50%)"
     },
     {
       "time": 15.0,
       "action": { "type": "message" },
-      "message": "Grid controller delays test. Holding at 50%. Iodine-135 building..."
+      "message": "Grid controller delayed test 9 hours. Xe-135 building in fuel..."
     },
     {
       "time": 30.0,
       "action": { "type": "message" },
-      "message": "26 APR 00:28 - Resume power reduction to 25%"
+      "message": "26 APR 00:28 \u2014 Power transferred to local auto control"
     },
     {
       "time": 32.0,
       "action": { "type": "set_rods", "depth": 10.0 },
-      "message": "Inserting rods to reduce power..."
+      "message": "Power COLLAPSES to 30 MWt (~1%)! Setpoint error."
     },
     {
       "time": 45.0,
       "action": { "type": "message" },
-      "message": "Power dropping. Operator overshoots the reduction."
+      "message": "Near-zero power. Xe-135 poisoning accelerating rapidly."
     },
     {
       "time": 47.0,
       "action": { "type": "set_rods", "depth": 16.0 },
-      "message": "OPERATOR ERROR: Rods over-inserted! Power collapsing!"
+      "message": "Rods deep in core. Xenon trap closing on the reactor."
     },
     {
       "time": 60.0,
       "action": { "type": "message" },
-      "message": "00:30 - Xe-135 poisoning building at low power..."
+      "message": "Operators withdraw rods to recover power against xenon..."
     },
     {
       "time": 70.0,
       "action": { "type": "message" },
-      "message": "Operators attempt to raise power against xenon poisoning"
+      "message": "01:00 \u2014 Stabilized at 200 MWt (6%). ORM already violated."
     },
     {
       "time": 72.0,
       "action": { "type": "set_auto_control", "enabled": false },
-      "message": "AUTO CONTROL DISABLED - Manual rod operation"
+      "message": "AUTO CONTROL DISABLED \u2014 Manual rod withdrawal"
     },
     {
       "time": 75.0,
       "action": { "type": "set_rods", "depth": 4.0 },
-      "message": "Withdrawing rods to overcome xenon..."
+      "message": "Withdrawing rods to overcome xenon poisoning..."
     },
     {
       "time": 85.0,
       "action": { "type": "set_rods", "depth": 1.5 },
-      "message": "VIOLATION: Rods withdrawn past safety limit!"
+      "message": "VIOLATION: Rods withdrawn past operating limits!"
     },
     {
       "time": 95.0,
       "action": { "type": "set_rods", "depth": 0.5 },
-      "message": "01:03 - Only 6-8 rods remain (minimum 30 required!)"
+      "message": "01:19 \u2014 Extra feedwater pumps ON. Coolant flow increased."
     },
     {
-      "time": 110.0,
-      "action": { "type": "message" },
-      "message": "01:19 - Extra feedwater pumps ON for turbine test"
-    },
-    {
-      "time": 112.0,
+      "time": 97.0,
       "action": { "type": "set_coolant_flow", "flow": 1.5 },
-      "message": "Increased coolant flow - suppresses boiling temporarily"
+      "message": "Increased coolant flow suppresses boiling temporarily"
+    },
+    {
+      "time": 108.0,
+      "action": { "type": "message" },
+      "message": "01:22:30 \u2014 ORM at 6\u20138 rods. Minimum required: 15. (INSAG-7)"
+    },
+    {
+      "time": 120.0,
+      "action": { "type": "message" },
+      "message": "01:23:04 \u2014 TURBINE TEST BEGINS. Feed valves closed."
+    },
+    {
+      "time": 123.0,
+      "action": { "type": "set_coolant_flow", "flow": 0.5 },
+      "message": "Turbine coasting down. Coolant pumps losing power..."
     },
     {
       "time": 130.0,
-      "action": { "type": "message" },
-      "message": "01:23:04 - TURBINE TEST BEGINS"
-    },
-    {
-      "time": 133.0,
-      "action": { "type": "set_coolant_flow", "flow": 0.5 },
-      "message": "Steam valves closed. Turbine coasting down..."
-    },
-    {
-      "time": 140.0,
       "action": { "type": "set_coolant_flow", "flow": 0.2 },
-      "message": "Coolant pumps losing power!"
+      "message": "Coolant flow dropping! Steam forming in pressure channels."
     },
     {
-      "time": 148.0,
+      "time": 138.0,
       "action": { "type": "set_coolant_flow", "flow": 0.05 },
-      "message": "COOLANT FLOW CRITICAL - Steam building in channels!"
+      "message": "COOLANT FLOW CRITICAL \u2014 Void coefficient feedback starting!"
     },
     {
-      "time": 158.0,
+      "time": 150.0,
       "action": { "type": "message" },
-      "message": "01:23:40 - Power surging! Positive void coefficient!"
+      "message": "01:23:30 \u2014 Power rising. Positive void coefficient active."
     },
     {
-      "time": 168.0,
+      "time": 160.0,
       "action": { "type": "message" },
-      "message": "01:23:40 - Akimov: Press AZ-5!"
+      "message": "01:23:40 \u2014 Akimov orders AZ-5. Emergency scram!"
     },
     {
-      "time": 170.0,
+      "time": 163.0,
       "action": { "type": "scram" },
-      "message": "AZ-5 PRESSED - Graphite displacer tips entering core!"
+      "message": "AZ-5 PRESSED \u2014 Graphite displacer tips enter core first!"
     },
     {
-      "time": 180.0,
+      "time": 172.0,
       "action": { "type": "message" },
-      "message": "DISPLACER TIPS: Steam pressure blocking rod insertion!"
+      "message": "POSITIVE SCRAM: Tips displace water \u2192 reactivity spike!"
+    },
+    {
+      "time": 178.0,
+      "action": { "type": "message" },
+      "message": "01:23:43 \u2014 Power exceeds 530 MWt. Fuel rods fracturing!"
+    },
+    {
+      "time": 184.0,
+      "action": { "type": "message" },
+      "message": "Rods jammed at ~2\u20132.5m of 7m. Steam lifting assemblies!"
     },
     {
       "time": 190.0,
       "action": { "type": "message" },
-      "message": "01:23:47 - PROMPT SUPERCRITICAL EXCURSION"
+      "message": "01:23:47 \u2014 PROMPT SUPERCRITICAL \u2014 Power reaches ~30,000 MWt"
     },
     {
       "time": 200.0,
       "action": { "type": "set_paused", "paused": true },
-      "message": "Reactor 4 destroyed. April 26, 1986."
+      "message": "Reactor 4 destroyed. Two explosions. 26 April 1986, 01:23:47."
     }
   ]
 }

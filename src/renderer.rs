@@ -15,6 +15,7 @@ pub enum InputEvent {
     InjectNeutrons,
     CoolantFlowUp,
     CoolantFlowDown,
+    ToggleLegend,
 }
 
 #[allow(dead_code)]

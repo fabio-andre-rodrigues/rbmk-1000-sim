@@ -15,6 +15,12 @@ pub struct Neutron {
     pub vy: f32,
     pub speed: NeutronSpeed,
     pub alive: bool,
+    /// Number of physical neutrons this particle represents.
+    /// Fission multiplies weight instead of spawning N separate
+    /// particles, reducing allocations by ~66% per generation.
+    /// Split back into unit-weight particles when weight exceeds
+    /// WEIGHT_SPLIT_THRESHOLD to maintain spatial diversity.
+    pub weight: f32,
 }
 
 impl Neutron {
@@ -32,6 +38,7 @@ impl Neutron {
             vy: angle.sin() * magnitude,
             speed,
             alive: true,
+            weight: 1.0,
         }
     }
 
@@ -90,6 +97,7 @@ mod tests {
             vy: 0.0,
             speed: NeutronSpeed::Fast,
             alive: true,
+            weight: 1.0,
         };
         n.update(0.1);
         assert!((n.x - 120.0).abs() < 0.01);
@@ -106,6 +114,7 @@ mod tests {
             vy: 0.0,
             speed: NeutronSpeed::Fast,
             alive: true,
+            weight: 1.0,
         };
         n.update(0.1); // moves +20px, should bounce
         assert!(n.vx < 0.0); // direction reversed
@@ -136,6 +145,7 @@ mod tests {
             vy: 0.0,
             speed: NeutronSpeed::Thermal,
             alive: true,
+            weight: 1.0,
         };
         assert_eq!(n.grid_col(), 1); // 25/16 = 1
         assert_eq!(n.grid_row(), 2); // 33/16 = 2

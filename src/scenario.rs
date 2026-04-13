@@ -157,20 +157,18 @@ impl ScenarioRunner {
             // Execute action
             match &event.action {
                 EventAction::SetRods { depth } => {
-                    let d = depth.clamp(0.0, GRID_ROWS as f32);
-                    for pos in &mut sim.rods.positions {
-                        *pos = d;
-                    }
+                    sim.rods.set_targets(*depth);
                     sim.stats.is_scrammed = false;
                 }
                 EventAction::SetRodsIndividual { positions } => {
-                    for (i, &p) in positions.iter().enumerate() {
-                        sim.rods.positions[i] = p.clamp(0.0, GRID_ROWS as f32);
-                    }
+                    sim.rods.set_individual_targets(*positions);
                     sim.stats.is_scrammed = false;
                 }
                 EventAction::SetAutoControl { enabled } => {
                     sim.stats.auto_control = *enabled;
+                    if *enabled {
+                        sim.rods.target_active = false;
+                    }
                 }
                 EventAction::Scram => {
                     sim.rods.scram();

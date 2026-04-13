@@ -234,6 +234,7 @@ fn map_key(key: KeyEvent) -> Option<InputEvent> {
         KeyCode::Char('+') | KeyCode::Char('=') => Some(InputEvent::SpeedUp),
         KeyCode::Char('-') | KeyCode::Char('_') => Some(InputEvent::SpeedDown),
         KeyCode::Char('n') | KeyCode::Char('N') => Some(InputEvent::InjectNeutrons),
+        KeyCode::Char('l') | KeyCode::Char('L') => Some(InputEvent::ToggleLegend),
         KeyCode::Right => Some(InputEvent::CoolantFlowUp),
         KeyCode::Left => Some(InputEvent::CoolantFlowDown),
         _ => None,
@@ -244,15 +245,15 @@ fn draw_ui(f: &mut Frame, sim: &Simulation, scenario_msg: Option<&str>) {
     let term_w = f.area().width;
     let term_h = f.area().height;
 
-    // Calculate cell width: use 2 chars per cell if terminal is wide enough
     let min_hud_width = 36_u16;
-    let available_for_grid = term_w.saturating_sub(min_hud_width + 2);
+    let legend_width = if sim.stats.show_legend { 32_u16 } else { 0 };
+    let available_for_grid = term_w.saturating_sub(min_hud_width + legend_width + 2);
     let cell_w: u16 = if available_for_grid >= (GRID_COLS as u16) * 2 + 2 {
         2
     } else {
         1
     };
-    let grid_panel_w = (GRID_COLS as u16) * cell_w + 2; // +2 for borders
+    let grid_panel_w = (GRID_COLS as u16) * cell_w + 2;
 
     let msg_height = if scenario_msg.is_some() { 3_u16 } else { 0 };
     let outer = Layout::default()
@@ -263,16 +264,31 @@ fn draw_ui(f: &mut Frame, sim: &Simulation, scenario_msg: Option<&str>) {
         ])
         .split(f.area());
 
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
+    // Horizontal: Grid | HUD | Legend (optional)
+    let h_constraints = if sim.stats.show_legend {
+        vec![
+            Constraint::Length(grid_panel_w.min(term_w.saturating_sub(min_hud_width + legend_width))),
+            Constraint::Min(min_hud_width),
+            Constraint::Length(legend_width),
+        ]
+    } else {
+        vec![
             Constraint::Length(grid_panel_w.min(term_w.saturating_sub(min_hud_width))),
             Constraint::Min(min_hud_width),
-        ])
+        ]
+    };
+
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(h_constraints)
         .split(outer[0]);
 
     draw_grid(f, chunks[0], sim, cell_w, term_h);
     draw_hud(f, chunks[1], sim);
+
+    if sim.stats.show_legend {
+        draw_legend_panel(f, chunks[2]);
+    }
 
     // Scenario event message banner at bottom
     if let Some(msg) = scenario_msg {
@@ -289,6 +305,88 @@ fn draw_ui(f: &mut Frame, sim: &Simulation, scenario_msg: Option<&str>) {
         .block(msg_block);
         f.render_widget(msg_para, outer[1]);
     }
+}
+
+fn draw_legend_panel(f: &mut Frame, area: Rect) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Legend (L) ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    // Each entry: [██] Label — using actual render colors
+    let lines = vec![
+        Line::from("  CELL TYPES"),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("\u{2588}\u{2588}", Style::default().fg(Color::Green).bg(Color::Rgb(0, 0, 80))),
+            Span::raw("] U-235 (active)"),
+        ]),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("\u{2591}\u{2591}", Style::default().fg(Color::DarkGray).bg(Color::Rgb(0, 0, 80))),
+            Span::raw("] U-235 (spent)"),
+        ]),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("\u{2551}\u{2551}", Style::default().fg(Color::Blue).bg(Color::Black)),
+            Span::raw("] Graphite moderator"),
+        ]),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("\u{2593}\u{2593}", Style::default().fg(Color::Red).bg(Color::Black)),
+            Span::raw("] Boron absorber"),
+        ]),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("\u{2593}\u{2593}", Style::default().fg(Color::Rgb(60, 100, 220)).bg(Color::Black)),
+            Span::raw("] Graphite tip"),
+        ]),
+        Line::from(""),
+        Line::from("  WATER / COOLANT"),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("  ", Style::default().bg(Color::Rgb(0, 0, 80))),
+            Span::raw("] Cool water"),
+        ]),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("  ", Style::default().bg(Color::Rgb(100, 0, 0))),
+            Span::raw("] Warm water"),
+        ]),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("  ", Style::default().bg(Color::Black)),
+            Span::raw("] Steam (void)"),
+        ]),
+        Line::from(""),
+        Line::from("  GAS OVERLAYS"),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("\u{2588}\u{2588}", Style::default().fg(Color::Green).bg(Color::Rgb(100, 0, 130))),
+            Span::raw("] Xenon-135"),
+        ]),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("\u{2588}\u{2588}", Style::default().fg(Color::Green).bg(Color::Rgb(200, 70, 0))),
+            Span::raw("] Iodine-135"),
+        ]),
+        Line::from(""),
+        Line::from("  NEUTRONS"),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("\u{00B7} ", Style::default().fg(Color::White).bg(Color::Rgb(0, 0, 80))),
+            Span::raw("] Fast (2 MeV)"),
+        ]),
+        Line::from(vec![
+            Span::raw(" ["),
+            Span::styled("\u{00B7} ", Style::default().fg(Color::DarkGray).bg(Color::Rgb(0, 0, 80))),
+            Span::raw("] Thermal (0.025eV)"),
+        ]),
+    ];
+
+    let paragraph = Paragraph::new(lines);
+    f.render_widget(paragraph, inner);
 }
 
 fn draw_grid(f: &mut Frame, area: Rect, sim: &Simulation, cell_w: u16, _term_h: u16) {
@@ -308,6 +406,19 @@ fn draw_grid(f: &mut Frame, area: Rect, sim: &Simulation, cell_w: u16, _term_h: 
                 neutron_map[row][col] += 1;
                 neutron_speed_map[row][col] = n.speed;
             }
+        }
+    }
+
+    // Build graphite displacer tip map: the bottom DISPLACER_TIP_ROWS
+    // of each rod are graphite (not boron). This is the fatal design
+    // flaw — graphite displaces water before the absorber arrives.
+    let mut is_graphite_tip = [[false; GRID_COLS]; GRID_ROWS];
+    for i in 0..NUM_ABSORPTION_RODS {
+        let rod_col = sim.rods.rod_columns[i];
+        let depth = sim.rods.positions[i] as usize;
+        let tip_start = depth.saturating_sub(DISPLACER_TIP_ROWS);
+        for row in tip_start..depth {
+            is_graphite_tip[row][rod_col] = true;
         }
     }
 
@@ -353,7 +464,18 @@ fn draw_grid(f: &mut Frame, area: Rect, sim: &Simulation, cell_w: u16, _term_h: 
                     CellState::Uranium235Inactive { .. } => ('\u{2591}', Color::DarkGray),
                     CellState::Xenon135 { .. } => ('\u{2588}', Color::Green),
                     CellState::ModeratorRod => ('\u{2551}', Color::Blue),
-                    CellState::AbsorptionRod => ('\u{2593}', Color::Red),
+                    CellState::AbsorptionRod => {
+                        if is_graphite_tip[row][col] {
+                            // Graphite displacer tip — the fatal RBMK flaw.
+                            // Displaces water (neutron absorber) before the
+                            // boron carbide section arrives, causing a brief
+                            // local reactivity increase on rod insertion.
+                            ('\u{2593}', Color::Rgb(60, 100, 220))
+                        } else {
+                            // Boron carbide absorber (main rod body)
+                            ('\u{2593}', Color::Red)
+                        }
+                    }
                     CellState::Empty => (' ', Color::Black),
                 };
 
@@ -399,7 +521,6 @@ fn draw_hud(f: &mut Frame, area: Rect, sim: &Simulation) {
         .constraints([
             Constraint::Length(3),  // Power gauge
             Constraint::Length(13), // Stats
-            Constraint::Length(12), // Legend
             Constraint::Min(1),    // Controls
         ])
         .split(inner);
@@ -497,59 +618,14 @@ fn draw_hud(f: &mut Frame, area: Rect, sim: &Simulation) {
         .block(Block::default().title(" Statistics ").borders(Borders::ALL));
     f.render_widget(stats_para, chunks[1]);
 
-    // Legend
-    let legend_lines = vec![
-        Line::from(vec![
-            Span::styled("\u{2588}", Style::default().fg(Color::Green)),
-            Span::raw(" U-235 (active)"),
-        ]),
-        Line::from(vec![
-            Span::styled("\u{2591}", Style::default().fg(Color::DarkGray)),
-            Span::raw(" U-235 (spent)"),
-        ]),
-        Line::from(vec![
-            Span::styled("\u{2588}", Style::default().fg(Color::Rgb(255, 160, 0))),
-            Span::raw(" Iodine-135 (decays to Xe)"),
-        ]),
-        Line::from(vec![
-            Span::styled("\u{2588}", Style::default().fg(Color::Magenta)),
-            Span::raw(" Xenon-135"),
-        ]),
-        Line::from(vec![
-            Span::styled("\u{2551}", Style::default().fg(Color::Blue)),
-            Span::raw(" Moderator (graphite)"),
-        ]),
-        Line::from(vec![
-            Span::styled("\u{2593}", Style::default().fg(Color::Red)),
-            Span::raw(" Absorption rod"),
-        ]),
-        Line::from(vec![
-            Span::styled("  ", Style::default().bg(Color::Rgb(0, 0, 80))),
-            Span::raw(" Cool water"),
-        ]),
-        Line::from(vec![
-            Span::styled("  ", Style::default().bg(Color::Rgb(100, 0, 0))),
-            Span::raw(" Warm water"),
-        ]),
-        Line::from(vec![
-            Span::styled("\u{00B7}", Style::default().fg(Color::White)),
-            Span::raw(" Fast neutron  "),
-            Span::styled("\u{00B7}", Style::default().fg(Color::DarkGray)),
-            Span::raw(" Thermal"),
-        ]),
-    ];
-    let legend_para = Paragraph::new(legend_lines)
-        .block(Block::default().title(" Legend ").borders(Borders::ALL));
-    f.render_widget(legend_para, chunks[2]);
-
     // Controls
     let controls_lines = vec![
         Line::from("Space=Pause  S=SCRAM  R=Reset"),
         Line::from("Up/Down=Rods  Left/Right=Coolant"),
         Line::from("A=AutoCtrl  +/-=Speed  N=Neutrons"),
-        Line::from("Q=Quit"),
+        Line::from("L=Legend  Q=Quit"),
     ];
     let controls_para = Paragraph::new(controls_lines)
         .block(Block::default().title(" Controls ").borders(Borders::ALL));
-    f.render_widget(controls_para, chunks[3]);
+    f.render_widget(controls_para, chunks[2]);
 }

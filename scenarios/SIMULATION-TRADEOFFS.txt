@@ -1,0 +1,336 @@
+=====================================================================
+  SIMULATION APPROACH AND TRADEOFFS
+  Where the model matches reality, where it diverges, and why
+=====================================================================
+
+This document explains the design decisions, simplifications, and
+tradeoffs made in this RBMK-1000 simulation. The goal is educational
+accuracy — capturing the mechanisms and chain of causation — not
+numerical precision. A real reactor physics code (MCNP, Serpent,
+OpenMC) uses billions of neutron histories and coupled thermal-
+hydraulics. We use thousands and a 50x20 grid.
+
+
+=====================================================================
+  1. NEUTRON TRANSPORT: AGENT-BASED vs. DETERMINISTIC
+=====================================================================
+
+  REALITY:
+    A real RBMK core contains ~190 tonnes of UO2 fuel in 1,661
+    pressure channels. At full power, the neutron population is
+    on the order of 10^8 per cm^3. Neutron transport is governed
+    by the Boltzmann transport equation, solved either by Monte
+    Carlo methods (tracking individual particle histories through
+    continuous-energy cross-section libraries) or by deterministic
+    methods (discrete ordinates, diffusion theory).
+
+  OUR MODEL:
+    Agent-based Monte Carlo. Each neutron is an individual particle
+    with position, velocity, and energy state (fast or thermal).
+    Interactions are resolved probabilistically per cell traversal.
+
+  WHAT MATCHES:
+    - Neutrons are born fast (~2 MeV), must thermalize via
+      moderator collisions to cause fission — correct.
+    - Fission is probabilistic per traversal (macroscopic cross-
+      section analogy) — conceptually correct.
+    - Moderator scattering randomizes direction (isotropic) — a
+      valid simplification of the ~115 real collisions needed.
+    - Fast neutrons pass through absorption rods — correct (the
+      boron-10 absorption cross-section is thermal-dominated).
+    - Neutrons bounce off core boundaries — models the graphite
+      reflector surrounding the real core.
+
+  WHAT DIVERGES:
+    - We model TWO energy groups (fast/thermal). Real transport
+      codes use continuous energy or 100+ groups. The thermalization
+      is instant on moderator contact rather than gradual.
+    - Our 50x20 grid (~1,000 cells) is vastly simplified. The real
+      core has 1,661 fuel channels in a cylindrical geometry.
+    - We cap neutrons at 5,000 particles for performance. Real
+      codes track millions of histories.
+    - Fission probability is a constant (FISSION_PROBABILITY = 0.20
+      per cell traversal). In reality it depends on energy, fuel
+      temperature (Doppler broadening), burnup, etc.
+    - We use weighted particles (rayon-parallelized): one particle
+      can represent multiple physical neutrons. This reduces
+      allocation overhead but increases statistical variance.
+
+  WHY THIS TRADEOFF:
+    The agent-based approach makes the physics VISIBLE. You can
+    watch individual neutrons scatter, thermalize, get absorbed,
+    and cause fission. This is impossible with a point-kinetics
+    model (differential equations) that treats the core as a
+    single lumped parameter.
+
+
+=====================================================================
+  2. TIME COMPRESSION
+=====================================================================
+
+  REALITY:
+    - I-135 half-life: 6.57 hours
+    - Xe-135 half-life: 9.17 hours
+    - Xe-135 peaks ~11 hours after shutdown ("iodine pit")
+    - The 9-hour delay between initial power reduction and test
+      execution was critical for xenon accumulation.
+    - The actual accident sequence from 01:23:04 (test start) to
+      01:23:47 (explosion) was 43 SECONDS.
+
+  OUR MODEL:
+    - I-135 decay rate compressed from 6.57h to ~5s (lambda=0.14)
+    - Xe-135 decay compressed from 9.17h to 45s
+    - The 24-hour real timeline is compressed to ~200 seconds
+    - The 43-second test-to-explosion sequence spans ~40 sim seconds
+
+  WHAT MATCHES:
+    - The RELATIVE dynamics are preserved: iodine decays into
+      xenon, xenon poisons the reactor, xenon burns off when
+      flux returns. The "iodine pit" mechanism works correctly.
+    - The compressed timescale still shows the causal sequence:
+      power drop → xenon buildup → rod withdrawal → coolant loss
+      → void coefficient → positive scram → destruction.
+
+  WHAT DIVERGES:
+    - In reality, the xenon pit deepens over HOURS, not seconds.
+      Operators had time to discuss, argue, and make phone calls.
+      Our simulation compresses this deliberation into seconds.
+    - The water heating cycle (cool → warm → vapor) takes seconds
+      in the sim vs. minutes in reality, making the void
+      coefficient feedback appear faster than it was.
+    - The simulation speed multiplier (1x-4x) further compresses
+      time, which can make some effects appear instantaneous.
+
+  WHY THIS TRADEOFF:
+    A real-time simulation of the xenon pit would require the user
+    to watch for 11+ hours. Compression preserves causation while
+    making the physics observable in a few minutes.
+
+
+=====================================================================
+  3. DELAYED NEUTRONS
+=====================================================================
+
+  REALITY:
+    6 precursor groups with half-lives from 0.2s to 55s. The
+    effective delayed neutron fraction (beta-eff) for the RBMK
+    is 0.0064. These delayed neutrons are what makes a reactor
+    controllable — without them, the generation time would be
+    ~10^-4 seconds (uncontrollable).
+
+  OUR MODEL:
+    One effective precursor group: beta = 0.0065, lambda = 0.08/s.
+    Fission deposits a fraction of its yield into a precursor pool
+    that decays into neutrons over time.
+
+  WHAT MATCHES:
+    - The delayed fraction (0.65%) matches the real RBMK value.
+    - The concept that delayed neutrons make control possible is
+      correctly demonstrated — at subcritical/critical states, the
+      reactor responds on a seconds timescale, not microseconds.
+    - When reactivity exceeds beta (prompt supercritical), delayed
+      neutrons become irrelevant and the reactor period drops to
+      milliseconds — correctly modeled.
+
+  WHAT DIVERGES:
+    - Six precursor groups compressed to one. The real decay
+      spectrum has components ranging from 0.2s to 55s. Our single
+      group (tau ≈ 12.5s) captures the average but not the spread.
+    - Delayed neutrons spawn at random fuel cells, not at their
+      original fission site. In reality, precursors are embedded
+      in the fuel where fission occurred.
+
+
+=====================================================================
+  4. CONTROL ROD MECHANICS
+=====================================================================
+
+  REALITY:
+    - 211 control rods total (various groups: manual, shortened
+      absorber, automatic regulators).
+    - Full insertion time: 18-21 seconds (0.4 m/s).
+    - Rod channel diameter is narrow — water acts as a fluid
+      damper ("dashpot effect").
+    - The graphite displacer is 4.5m long with a 1.25m water
+      column at each end when fully withdrawn.
+    - During SCRAM, rods seized at 2-2.5m of 7m travel due to
+      fuel channel deformation and steam pressure.
+
+  OUR MODEL:
+    - 5 control rods (one per 10-column zone).
+    - SCRAM speed: 1.5 rows/sec (~13s for full insertion).
+    - Graphite displacer tip: bottom 2 rows of each rod, with
+      a 1.5x reactivity boost during insertion.
+    - Steam pressure opposes rod insertion proportionally to
+      local void fraction and rod depth in channel.
+    - Per-rod steam forces: each rod responds to steam in its
+      own zone independently.
+    - Rods insert to ~30% depth then stall/bounce under steam
+      pressure — matching the historical ~2-2.5m of 7m.
+
+  WHAT MATCHES:
+    - The "positive scram" mechanism: graphite tips increase
+      local reactivity before the boron absorber arrives. This
+      is the key Chernobyl mechanism and is correctly modeled.
+    - Gradual rod insertion (not instant) with realistic speed.
+    - Steam pressure opposing insertion, with the rod bouncing
+      at a physically motivated equilibrium depth.
+    - Per-zone rod independence: rods in heavily boiling zones
+      stall while rods in cooler zones can still insert.
+    - The displacer tips are visually distinct (blue vs. red)
+      so the user can see them leading the rod into the core.
+
+  WHAT DIVERGES:
+    - 5 rods vs. 211 real rods. We cannot model individual rod
+      patterns, partial withdrawals, or the complex spatial
+      distribution of rods across the real 1,661-channel core.
+    - The 1.25m water column gap is abstracted as a 2-row boost
+      zone rather than physically modeled as a water displacement.
+    - Auto-control uses a simple proportional controller with
+      dead-band, not the real LAR/AR-1/AR-2 automatic regulators
+      which had their own complex (and buggy) behavior.
+    - The scenario uses target-based rod movement (gradual),
+      while the real rods had individual servo drives with
+      independent failure modes.
+
+
+=====================================================================
+  5. WATER / COOLANT MODEL
+=====================================================================
+
+  REALITY:
+    - Light water at ~7 MPa (280°C) flows through 1,661 individual
+      pressure tubes at ~24,000 m^3/hour total.
+    - Each channel has its own flow rate, temperature profile, and
+      void fraction.
+    - Boiling occurs in the upper portion of the channel (two-phase
+      flow). The void fraction varies axially and radially.
+    - At Chernobyl, the MCP (main circulation pump) flow was
+      measured at ~56,000-58,000 m^3/hour (abnormally high due to
+      extra pumps) before the test.
+
+  OUR MODEL:
+    - Three water states per cell: Cool, Warm, Vapor.
+    - Neutron hits accumulate; at thresholds, water transitions.
+    - Vapor returns to Warm→Cool over time scaled by coolant flow.
+    - Global coolant flow multiplier (0.0-2.0) controls cooling.
+    - Pressure derived from global void fraction / coolant flow.
+
+  WHAT MATCHES:
+    - The positive void coefficient: steam cells have no neutron
+      absorption, increasing local fission probability by 1.3x.
+      This drives the runaway feedback loop correctly.
+    - Reduced coolant flow → slower vapor condensation → more
+      steam accumulates → more positive reactivity.
+    - The visual progression (blue → red → black) makes the
+      void formation visible and intuitive.
+
+  WHAT DIVERGES:
+    - Water state is per-cell, not per-channel. Real channels
+      have axial void profiles; our model has uniform states.
+    - Three discrete states vs. continuous void fraction. Real
+      boiling is a gradual phase transition.
+    - No two-phase flow dynamics, no slip ratio, no subcooled
+      boiling, no departure from nucleate boiling (DNB).
+    - Pressure is a global derived quantity, not a per-channel
+      measurement with steam drum dynamics.
+    - The 1.3x void coefficient boost is a simplification of a
+      complex function of void fraction, enrichment, burnup,
+      and rod configuration.
+
+
+=====================================================================
+  6. THE PARALLEL ARCHITECTURE
+=====================================================================
+
+  REALITY (computational):
+    Real Monte Carlo transport codes (MCNP, Serpent, OpenMC) run
+    millions to billions of neutron histories on HPC clusters.
+    Each history is independent — embarrassingly parallel.
+
+  OUR MODEL:
+    Rayon-parallelized neutron transport with a two-phase approach:
+    Phase 1 (parallel): process all neutrons against a read-only
+    grid snapshot. Phase 2 (sequential): apply grid mutations.
+
+  WHAT MATCHES:
+    - Neutron histories are independent — each rayon worker
+      processes its assigned neutrons without synchronization.
+    - Thread-local RNG (rand::thread_rng) prevents contention,
+      matching real Monte Carlo parallel implementations.
+
+  WHAT DIVERGES:
+    - The two-phase approach means all neutrons in a frame see
+      the same grid state (beginning-of-frame snapshot). In the
+      sequential version, early neutrons' effects were visible to
+      later neutrons within the same frame.
+    - "Phantom fission" filtering: if two neutrons fission the
+      same cell in one frame, the second is discarded. This is
+      an artifact of the parallel approach that doesn't exist in
+      sequential processing.
+    - Weighted particles (one particle representing multiple
+      neutrons) are used to reduce allocation pressure. The weight
+      infrastructure is present but particles split aggressively
+      (WEIGHT_SPLIT_THRESHOLD = 2.0) to maintain spatial diversity.
+    - Grid timer updates (iodine decay, water cooling) are also
+      parallelized by row with rayon.
+
+
+=====================================================================
+  7. WHAT THE SIMULATION GETS RIGHT (SUMMARY)
+=====================================================================
+
+  The following causal mechanisms are physically correct and emerge
+  naturally from the simulation's rules — they are not scripted:
+
+  1. Chain reaction requires thermalized neutrons (graphite moderator)
+  2. Xenon-135 poisons the reactor after power reduction (iodine pit)
+  3. Rod withdrawal is necessary to overcome xenon
+  4. Loss of coolant flow → steam → positive void coefficient → surge
+  5. SCRAM with graphite tips → initial reactivity INCREASE
+  6. Steam in channels opposes rod insertion (rods bounce at ~30%)
+  7. The disaster emerges as a natural consequence of the RBMK's
+     design flaws when combined with the operator actions
+
+  The Chernobyl disaster is not "played back" — it is RECREATED
+  by the physics engine given the same sequence of inputs. Change
+  the inputs (don't withdraw all the rods, don't reduce coolant
+  flow, use a reactor without positive void coefficient) and the
+  outcome changes.
+
+
+=====================================================================
+  8. WHAT THE SIMULATION GETS WRONG (SUMMARY)
+=====================================================================
+
+  1. Scale: 5 rods / 1,000 cells vs. 211 rods / 1,661 channels
+  2. Energy groups: 2 (fast/thermal) vs. continuous energy
+  3. Time compression: hours → seconds for xenon dynamics
+  4. Water model: 3 discrete states vs. continuous two-phase flow
+  5. Geometry: 2D rectangular grid vs. 3D cylindrical core
+  6. No fuel temperature feedback (Doppler broadening)
+  7. No structural mechanics (fuel swelling, channel deformation)
+  8. No radiation transport (gamma heating, decay heat)
+  9. No containment model (the RBMK had minimal containment)
+  10. No atmospheric dispersion (the 50-day fire, the plume)
+
+  These omissions are deliberate. Each would add complexity without
+  improving the educational value of watching neutrons, rods, water,
+  and xenon interact in real time.
+
+
+=====================================================================
+  REFERENCES
+=====================================================================
+
+  [1] IAEA Safety Series No. 75-INSAG-7 (1992)
+      https://pub.iaea.org/MTCD/publications/PDF/Pub913e_web.pdf
+
+  [2] World Nuclear Association, "RBMK Reactors"
+      https://world-nuclear.org/information-library/appendices/rbmk-reactors
+
+  [3] X-5 Monte Carlo Team, "MCNP — A General Monte Carlo
+      N-Particle Transport Code" (Los Alamos National Laboratory)
+
+  [4] Leppanen et al., "The Serpent Monte Carlo code" (2015)
+      https://doi.org/10.1016/j.anucene.2014.08.024

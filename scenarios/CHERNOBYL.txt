@@ -1,0 +1,405 @@
+=====================================================================
+  CHERNOBYL — APRIL 26, 1986
+  RBMK-1000 Unit 4 — The Worst Nuclear Accident in History
+=====================================================================
+
+This document describes the historical events behind the Chernobyl
+scenario included with this simulation, sourced from the IAEA
+INSAG-7 report, the World Nuclear Association, and the OECD Nuclear
+Energy Agency. All timestamps and technical details are drawn from
+these primary references.
+
+
+=====================================================================
+  THE REACTOR: RBMK-1000
+=====================================================================
+
+The RBMK-1000 (Reaktor Bolshoy Moshchnosti Kanalnyy — "High-Power
+Channel Reactor") was a Soviet-designed graphite-moderated,
+light-water-cooled reactor producing 3,200 MWt / 1,000 MWe.
+
+Key design characteristics:
+
+  Moderator:     Graphite (1,700 tonnes)
+  Coolant:       Light water (in 1,661 individual pressure tubes)
+  Fuel:          2% enriched UO2
+  Control rods:  211 boron carbide rods with graphite displacers
+  Rod speed:     ~0.4 m/s (18-21 seconds for full 7m insertion)
+
+Two fatal design flaws made Chernobyl possible:
+
+  1. POSITIVE VOID COEFFICIENT
+     In most Western reactors (PWR/BWR), water is both coolant and
+     moderator. If water boils away, moderation stops and the
+     reaction slows. In the RBMK, graphite is the moderator.
+     Water primarily absorbs neutrons. If it turns to steam,
+     absorption decreases and reactivity INCREASES — a positive
+     feedback loop.
+
+  2. GRAPHITE DISPLACER TIPS ("Positive Scram" Effect)
+     Each control rod consists of a boron carbide absorber section
+     connected by a telescope to a 4.5-meter graphite displacer.
+     When fully withdrawn, the displacer sits centrally in the
+     fuelled region with 1.25 meters of water at each end.
+
+     When the rod is inserted from fully withdrawn, the graphite
+     tip enters the lower core FIRST, displacing neutron-absorbing
+     water with neutron-moderating graphite. For the first 11-14
+     seconds of rod insertion, the lower core experiences a local
+     INCREASE in reactivity — the opposite of what an emergency
+     shutdown should do.
+
+     This effect was discovered experimentally in 1983 during
+     startup of Ignalina-1 (Lithuania) and Chernobyl-4 itself.
+     The scientific manager described it as "extremely dangerous."
+     Proposals to redesign the rods were made but never implemented.
+
+     INSAG-7 later stated:
+     "Apparently, there was a widespread view that the conditions
+     under which the positive scram effect would be important would
+     never occur."
+
+     They occurred in almost every detail on the night of April 26.
+
+
+=====================================================================
+  THE PEOPLE
+=====================================================================
+
+  Anatoly Dyatlov   Deputy Chief Engineer. Present to direct the
+                     test. Highest-ranking person in the control
+                     room that night.
+
+  Aleksandr Akimov  Unit Shift Supervisor, Unit 4 night shift.
+                     Responsible for operational decisions.
+
+  Leonid Toptunov   Senior Reactor Control Engineer. Responsible
+                     for control rod positions and reactor regimen.
+                     25 years old, had worked independently for
+                     approximately three months.
+
+  Akimov and Toptunov both died of acute radiation syndrome in
+  May 1986 after entering the destroyed reactor building to attempt
+  to pump water into the ruined core.
+
+
+=====================================================================
+  TIMELINE OF EVENTS
+=====================================================================
+
+  All times are local (Moscow Time, UTC+3).
+
+  ─────────────────────────────────────────────────────────────────
+  APRIL 25, 1986
+  ─────────────────────────────────────────────────────────────────
+
+  01:06   Scheduled shutdown begins. Gradual power reduction from
+          3,200 MWt (100%) toward the test target of 700-1,000 MWt.
+
+  03:47   Power reaches 1,600 MWt (50%). Reduction paused.
+
+  14:00   ECCS (Emergency Core Cooling System) disconnected as part
+          of the test procedure. The Kiev grid controller requests
+          continued power output to meet evening demand. The test
+          is delayed. The reactor holds at 1,600 MWt for 9 hours.
+
+          During this hold, Iodine-135 is produced by fission and
+          begins decaying into Xenon-135 — a powerful neutron
+          poison (thermal absorption cross-section: 2.6 million
+          barns). This is normal at steady power, but will become
+          critical once power is reduced.
+
+  23:10   Grid controller releases the reactor. Power reduction
+          resumes. The day shift that was briefed on the test is
+          long gone; the night shift takes over.
+
+  ─────────────────────────────────────────────────────────────────
+  APRIL 26, 1986
+  ─────────────────────────────────────────────────────────────────
+
+  00:05   Power reaches 720 MWt. On track for the test.
+
+  00:28   POWER COLLAPSES TO 30 MWt (~1%).
+
+          When reactor control was switched from local to global
+          automatic regulators, power plummeted. The exact cause
+          is disputed:
+
+            - INSAG-1 (1986): Operator error by Toptunov.
+            - Dyatlov's account: Fault in the AR-2 automatic
+              regulator system.
+            - INSAG-7 (1992): Cause uncertain.
+
+          Akimov wants to abort the test. Dyatlov overrides him
+          and orders the operators to continue, threatening to
+          replace the shift. Toptunov and Akimov comply.
+
+          At 30 MWt, the Xe-135 concentration begins rising
+          sharply ("xenon pit"). Xenon is no longer being burned
+          off by neutron flux, and Iodine-135 accumulated during
+          the 9-hour hold continues decaying into fresh Xe-135.
+
+  ~00:32  Operators begin withdrawing control rods to fight the
+  -01:00  xenon poisoning and recover power. Multiple rod groups
+          are pulled further than normal operating limits allow.
+
+  01:00   Power stabilized at approximately 200 MWt (6% of rated
+          power). The test was originally planned at 700-1,000 MWt.
+          The operators decide to proceed at 200 MWt anyway.
+
+          The Operating Reactivity Margin (ORM) is already violated.
+          Standard operating rules require a minimum ORM equivalent
+          to 15 control rods. Many rods have been withdrawn to
+          overcome the xenon.
+
+  01:03   Standby main circulation pump (MCP) connected to the
+          left cooling loop.
+
+  01:07   Additional MCP added to the right loop. The excessive
+          coolant flow creates instabilities in the steam drum
+          pressure and water level.
+
+  ~01:19  Feedwater flow increased to compensate for dropping
+          steam drum water levels. Automatic shutdown signals
+          from the steam drum separators are BLOCKED by the
+          operators, who fear an automatic trip will abort the test.
+
+  01:22   Steam drum level and pressure begin stabilizing, but the
+  :30     extra cold feedwater suppresses steam production, which
+          masks the true instability of the reactor.
+
+          POST-ACCIDENT CALCULATIONS: ORM at this point equals
+          only 6-8 manual control rods. Minimum required: 15.
+          The reactor is operating in a regime never analyzed for
+          safety by any independent body. (INSAG-7)
+
+  01:23   TURBINE RUNDOWN TEST BEGINS.
+  :04     Feed valves to Turbine Generator 8 are closed.
+          The turbine begins coasting down. As it decelerates,
+          it provides less and less power to the coolant pumps.
+          Coolant flow through the core begins dropping.
+
+  01:23   Coolant flow decreases. Steam begins forming in the
+  :10-30  pressure channels. The positive void coefficient kicks
+          in — as water turns to steam, neutron absorption drops,
+          reactivity increases, power begins to rise.
+
+  01:23   AKIMOV PRESSES AZ-5 — EMERGENCY SCRAM.
+  :40
+          Whether this was in response to the rising power or as
+          a routine end-of-test shutdown is unknown. Both Akimov
+          and Toptunov were dead within weeks.
+
+          All 211 control rods begin inserting. But from their
+          fully withdrawn positions, the graphite displacer tips
+          enter the lower core first...
+
+  01:23   POSITIVE SCRAM EFFECT.
+  :40-43  The graphite tips displace the 1.25m water columns at
+          the bottom of each rod channel. The lower core sees a
+          sudden increase in moderation and a decrease in
+          absorption — reactivity SPIKES.
+
+  01:23   Power excursion alarms activate. Reactor output exceeds
+  :43     530 MWt and is RISING. Fuel elements begin rupturing.
+
+          The ruptured fuel increases steam generation further
+          (positive void coefficient feedback). The 1,000-tonne
+          upper biological shield (reactor cover plate) partially
+          lifts, severing all remaining fuel channels and JAMMING
+          the control rods.
+
+          The rods stop at approximately 2-2.5 meters of their
+          full 7-meter travel. Akimov disconnects the servo
+          clutches to let the rods fall under gravity, but they
+          do not move — the channels are deformed.
+
+  01:23   PROMPT SUPERCRITICAL EXCURSION.
+  :47     Reactor power reaches an estimated 30,000 MWt —
+          approximately 10 times rated power, or 100 times the
+          level it was operating at minutes before.
+
+  01:23   First explosion (steam). The 1,000-tonne cover plate
+  :58     is blown clear. A second explosion follows almost
+          immediately — likely a steam explosion or (debated) a
+          small nuclear excursion. The reactor core is destroyed
+          and burning graphite is scattered across the site.
+
+
+=====================================================================
+  THE SIMULATION SCENARIO
+=====================================================================
+
+  The scenario file (scenarios/chernobyl.json) compresses the
+  ~24-hour timeline into ~200 seconds of simulation time while
+  preserving the key physics:
+
+  Sim Time    Historical Event
+  ────────    ──────────────────────────────────────────────────
+  t=0-5       Reactor at ~50% power (1,600 MWt equivalent)
+  t=5         23:10 — Power reduction resumes
+  t=15        9-hour delay context. Xe-135 accumulating.
+  t=30        00:28 — Power transferred to auto control
+  t=32        Power collapses to ~1%. Deep rod insertion.
+  t=45-47     Near-zero power. Xenon trap closing.
+  t=60-70     Operators withdraw rods. Stabilize at 200 MWt.
+  t=72        Auto control disabled. Manual operation.
+  t=75-95     Progressive rod withdrawal past safety limits.
+  t=95-97     01:19 — Extra feedwater, increased coolant flow.
+  t=108       01:22:30 — ORM at 6-8 rods (minimum 15).
+  t=120       01:23:04 — Turbine test begins.
+  t=123-138   Coolant flow drops as turbine coasts down.
+  t=150       01:23:30 — Power rising. Void coefficient active.
+  t=160       01:23:40 — Akimov orders AZ-5.
+  t=163       SCRAM. Graphite displacer tips enter core.
+  t=172       Positive scram effect — reactivity spike.
+  t=178       01:23:43 — Power exceeds 530 MWt.
+  t=184       Rods jammed at ~2-2.5m of 7m.
+  t=190       01:23:47 — Prompt supercritical (~30,000 MWt).
+  t=200       Reactor destroyed. Simulation pauses.
+
+  What to watch for:
+
+  - XENON BUILDUP (purple cells): After the power drop at t=32,
+    watch Xe-135 cells accumulate. This is the "iodine pit."
+
+  - ROD WITHDRAWAL (red/blue bars disappearing): From t=60-95,
+    the operators progressively withdraw rods. The HUD shows
+    rod insertion percentage dropping toward 0%.
+
+  - STEAM FORMATION (black background cells): After t=120, cool
+    water (dark blue) transitions to warm (dark red) to steam
+    (black) as coolant flow drops.
+
+  - THE SCRAM at t=163: Watch the control rods. They insert a
+    few rows (blue graphite tips visible first!), reach ~30%
+    depth, then STALL as steam pressure in the channels pushes
+    them back up. They oscillate around the equilibrium — this
+    is historically accurate.
+
+  - POWER SURGE: After the positive scram, the neutron count
+    explodes. The HUD shows power climbing past 300%.
+
+
+=====================================================================
+  POINTS OF CONTENTION
+=====================================================================
+
+  The causes of the Chernobyl disaster remain debated. The two
+  principal IAEA investigations reached opposite conclusions:
+
+  INSAG-1 (August 1986)
+  ─────────────────────
+  Based on Soviet testimony presented in Vienna, led by nuclear
+  scientist Valery Legasov. Conclusion: the accident was caused
+  by "a remarkable range of human errors and violations of
+  operating rules." The operators were primarily to blame.
+
+  Six plant staff were tried and convicted. Dyatlov received 10
+  years; Fomin and Bryukhanov 10 years each. The operators who
+  died (Akimov, Toptunov, and others) were blamed posthumously.
+
+  INSAG-7 (November 1992)
+  ────────────────────────
+  After the fall of the Soviet Union, new information became
+  available including declassified KGB documents from 1971-1988.
+  INSAG-7 reversed many of INSAG-1's conclusions:
+
+  - "Most of the earlier accusations against staff for breach
+    of regulations were acknowledged to be either erroneous or
+    judged less relevant."
+
+  - Turning off the ECCS was NOT a violation of regulations.
+
+  - The positive scram effect (graphite tips) was the primary
+    design cause. It had been known since 1983 but was never
+    fixed.
+
+  - "The accident was the result of the concurrence of specific
+    physical characteristics of the reactor, specific design
+    features of the reactor control elements, and the fact that
+    the reactor was brought to a state not specified by
+    procedures."
+
+  However, INSAG-7 also stated: "INSAG remains of the opinion
+  that critical actions of the operators were most ill judged."
+
+  Dyatlov's position (until his death in 1995)
+  ─────────────────────────────────────────────
+  Anatoly Dyatlov maintained that the reactor designers and the
+  officials who approved the flawed safety systems were the true
+  culprits. He acknowledged rules were broken but argued the
+  operators had no way of knowing that pressing AZ-5 could
+  trigger an explosion. The positive scram effect was not in any
+  operating manual, and the operators were never told about it.
+
+  Modern consensus
+  ────────────────
+  Chernobyl was a systemic failure. The reactor had a fatal
+  design flaw that its designers knew about and chose not to fix.
+  Regulators failed to require changes. Operators were not
+  informed of the risks. Management pushed forward with a poorly
+  planned test. And the operators disabled safety systems while
+  operating in a regime never analyzed for safety.
+
+  No single person or group caused Chernobyl. The disaster
+  required failures at the design, regulatory, management, and
+  operational levels to align on the same night.
+
+
+=====================================================================
+  POST-ACCIDENT MODIFICATIONS TO RBMK REACTORS
+=====================================================================
+
+  Following Chernobyl, all remaining RBMK reactors received
+  modifications to prevent a recurrence:
+
+  - Control rods redesigned to eliminate the 1.25m water column
+    below the graphite displacer, removing the positive scram.
+
+  - A fast-acting emergency protection system (FAEP) installed:
+    24 rods insert negative reactivity of at least 2-beta in
+    under 2.5 seconds (vs. the original 18-second full insertion).
+
+  - AZ-5 full insertion time reduced from 18 to 12 seconds.
+
+  - Fuel enrichment increased from 2.0% to 2.4% to reduce the
+    positive void coefficient.
+
+  - Additional absorbers added to the core to further reduce
+    the void coefficient.
+
+  - Operating procedures revised to require minimum ORM of 43-48
+    manual control rods (increased from 15).
+
+  As of 2025, all RBMK reactors in Russia have been shut down
+  or are scheduled for decommissioning.
+
+
+=====================================================================
+  SOURCES
+=====================================================================
+
+  [1] IAEA Safety Series No. 75-INSAG-7 (1992)
+      "The Chernobyl Accident: Updating of INSAG-1"
+      https://pub.iaea.org/MTCD/publications/PDF/Pub913e_web.pdf
+
+  [2] World Nuclear Association
+      "Chernobyl Accident 1986"
+      https://world-nuclear.org/information-library/safety-and-security/safety-of-plants/chernobyl-accident
+
+  [3] World Nuclear Association
+      "Sequence of Events - Chernobyl Accident Appendix 1"
+      https://world-nuclear.org/information-library/appendices/chernobyl-accident-appendix-1-sequence-of-events
+
+  [4] World Nuclear Association
+      "RBMK Reactors - Appendix to Nuclear Power Reactors"
+      https://world-nuclear.org/information-library/appendices/rbmk-reactors
+
+  [5] OECD Nuclear Energy Agency
+      "Chernobyl: Chapter I. The site and accident sequence"
+      https://www.oecd-nea.org/jcms/pl_28271/chernobyl-chapter-i-the-site-and-accident-sequence
+
+  [6] Wikipedia
+      "Investigations into the Chernobyl disaster"
+      https://en.wikipedia.org/wiki/Investigations_into_the_Chernobyl_disaster

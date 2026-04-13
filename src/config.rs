@@ -87,3 +87,13 @@ pub const POWER_PER_ACTIVATION: f32 = 80.0; // 3200/40
 pub const DISPLACER_TIP_DURATION: f32 = 2.0; // seconds
 pub const DISPLACER_TIP_BOOST: f32 = 1.5; // +50% local reactivity
 pub const DISPLACER_TIP_ROWS: usize = 2; // rows at rod leading edge
+
+// === Weighted Particles ===
+// When a fission product's weight exceeds this threshold,
+// split it into multiple particles to maintain spatial diversity.
+// With NEUTRONS_PER_FISSION=3, a weight-1 fission yields ~2.98.
+// At threshold 2.0, first-generation products split to ~3 particles
+// of weight ~0.99 — preserving the original spatial distribution
+// while the weight infrastructure enables rayon parallelization
+// and future variance reduction techniques.
+pub const WEIGHT_SPLIT_THRESHOLD: f32 = 2.0;

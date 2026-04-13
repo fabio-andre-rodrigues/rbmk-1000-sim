@@ -15,6 +15,11 @@ pub struct AbsorptionRodSystem {
     pub scram_active: bool,
     /// Per-zone target: each rod aims for TARGET / NUM_RODS
     pub zone_target: f32,
+    /// Scenario-driven rod depth targets. When active, rods move
+    /// toward these positions at ROD_MOVE_SPEED, with steam pressure
+    /// assisting withdrawal and opposing insertion.
+    pub targets: [f32; NUM_ABSORPTION_RODS],
+    pub target_active: bool,
 }
 
 impl AbsorptionRodSystem {
@@ -27,6 +32,8 @@ impl AbsorptionRodSystem {
             displacer_active: [false; NUM_ABSORPTION_RODS],
             scram_active: false,
             zone_target: TARGET_ACTIVATIONS_PER_SEC / NUM_ABSORPTION_RODS as f32,
+            targets: [0.0; NUM_ABSORPTION_RODS],
+            target_active: false,
         }
     }
 
@@ -80,10 +87,77 @@ impl AbsorptionRodSystem {
         self.update_displacer_timers(dt);
     }
 
+    /// Set all rods to move toward `depth` at ROD_MOVE_SPEED.
+    /// Used by scenario events — rods move gradually, not instantly.
+    pub fn set_targets(&mut self, depth: f32) {
+        let d = depth.clamp(0.0, GRID_ROWS as f32);
+        for t in &mut self.targets {
+            *t = d;
+        }
+        self.target_active = true;
+    }
+
+    /// Set individual rod targets.
+    pub fn set_individual_targets(&mut self, positions: [f32; NUM_ABSORPTION_RODS]) {
+        for (i, &p) in positions.iter().enumerate() {
+            self.targets[i] = p.clamp(0.0, GRID_ROWS as f32);
+        }
+        self.target_active = true;
+    }
+
+    /// Move rods toward their targets at ROD_MOVE_SPEED.
+    /// `pressure_up[i]`: per-rod rows/sec that local steam pushes
+    /// rod i upward, computed from the void fraction in that zone.
+    /// Insertion is slowed; withdrawal is assisted.
+    pub fn update_toward_targets(&mut self, dt: f32, pressure_up: &[f32; NUM_ABSORPTION_RODS]) {
+        if !self.target_active {
+            return;
+        }
+
+        let mut all_reached = true;
+        for i in 0..NUM_ABSORPTION_RODS {
+            let diff = self.targets[i] - self.positions[i];
+            if diff.abs() < 0.05 {
+                self.positions[i] = self.targets[i];
+                continue;
+            }
+            all_reached = false;
+
+            let old_pos = self.positions[i];
+            // Drive toward target; local steam always pushes up.
+            // Inserting (diff > 0): net = ROD_MOVE_SPEED - pressure (opposed)
+            // Withdrawing (diff < 0): net = -ROD_MOVE_SPEED - pressure (assisted)
+            let drive = diff.signum() * ROD_MOVE_SPEED;
+            self.positions[i] += (drive - pressure_up[i]) * dt;
+            self.positions[i] = self.positions[i].clamp(0.0, GRID_ROWS as f32);
+
+            // Don't overshoot target
+            let new_diff = self.targets[i] - self.positions[i];
+            if new_diff * diff < 0.0 {
+                self.positions[i] = self.targets[i];
+            }
+
+            // Track insertion for displacer tip
+            let now_inserting = self.positions[i] > old_pos;
+            if now_inserting && !self.was_inserting[i] {
+                self.displacer_timers[i] = DISPLACER_TIP_DURATION;
+                self.displacer_active[i] = true;
+            }
+            self.was_inserting[i] = now_inserting;
+        }
+
+        self.update_displacer_timers(dt);
+
+        if all_reached {
+            self.target_active = false;
+        }
+    }
+
     /// Initiate SCRAM — sets flag for gradual rod insertion.
-    /// Rods move at SCRAM_ROD_SPEED each tick via update_scram().
+    /// Overrides any active scenario targets.
     pub fn scram(&mut self) {
         self.scram_active = true;
+        self.target_active = false;
         // Activate displacer tips for rods not already fully inserted
         for i in 0..NUM_ABSORPTION_RODS {
             if self.positions[i] < GRID_ROWS as f32 {
@@ -94,10 +168,11 @@ impl AbsorptionRodSystem {
         }
     }
 
-    /// Drive SCRAM rods down at SCRAM_ROD_SPEED each tick.
-    /// pressure_factor: 1.0 = normal insertion, 0.0 = stalled,
-    /// negative = steam pushing rods back UP (Chernobyl effect).
-    pub fn update_scram_with_pressure(&mut self, dt: f32, pressure_factor: f32) {
+    /// Drive SCRAM rods down at SCRAM_ROD_SPEED against local steam.
+    /// `pressure_up[i]`: per-rod upward force from zone void fraction.
+    /// At high local void, steam overcomes gravity-driven SCRAM and
+    /// rods are pushed back UP — the Chernobyl mechanism.
+    pub fn update_scram(&mut self, dt: f32, pressure_up: &[f32; NUM_ABSORPTION_RODS]) {
         if !self.scram_active {
             return;
         }
@@ -106,8 +181,9 @@ impl AbsorptionRodSystem {
         for i in 0..NUM_ABSORPTION_RODS {
             let old_pos = self.positions[i];
 
-            // Move rod: positive factor = insert, negative = pushed back up
-            self.positions[i] += SCRAM_ROD_SPEED * dt * pressure_factor;
+            // SCRAM drives down (+), local steam pushes up (-)
+            let net_speed = SCRAM_ROD_SPEED - pressure_up[i];
+            self.positions[i] += net_speed * dt;
             self.positions[i] = self.positions[i].clamp(0.0, GRID_ROWS as f32);
 
             if self.positions[i] < GRID_ROWS as f32 {
@@ -212,9 +288,10 @@ mod tests {
         rods.scram();
         assert!(rods.scram_active);
 
-        // Simulate 15 seconds of SCRAM at normal pressure
+        // Simulate 15 seconds of SCRAM with no steam (all zones dry)
+        let no_steam = [0.0; NUM_ABSORPTION_RODS];
         for _ in 0..450 {
-            rods.update_scram_with_pressure(0.033, 1.0);
+            rods.update_scram(0.033, &no_steam);
         }
 
         // After ~15s at 1.5 rows/s, rods should be fully inserted
