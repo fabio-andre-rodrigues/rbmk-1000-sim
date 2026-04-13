@@ -20,8 +20,8 @@
     },
     {
       "time": 30.0,
-      "action": { "type": "message" },
-      "message": "26 APR 00:28 \u2014 Power transferred to local auto control"
+      "action": { "type": "set_auto_control", "enabled": false },
+      "message": "26 APR 00:28 \u2014 Control transfer. Auto regulators OFF."
     },
     {
       "time": 32.0,
@@ -50,8 +50,8 @@
     },
     {
       "time": 72.0,
-      "action": { "type": "set_auto_control", "enabled": false },
-      "message": "AUTO CONTROL DISABLED \u2014 Manual rod withdrawal"
+      "action": { "type": "message" },
+      "message": "Manual rod control. Operators fighting reactivity losses."
     },
     {
       "time": 75.0,
