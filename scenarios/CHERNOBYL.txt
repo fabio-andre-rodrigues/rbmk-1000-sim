@@ -167,9 +167,12 @@ Two fatal design flaws made Chernobyl possible:
           pressure and water level.
 
   ~01:19  Feedwater flow increased to compensate for dropping
-          steam drum water levels. Automatic shutdown signals
-          from the steam drum separators are BLOCKED by the
-          operators, who fear an automatic trip will abort the test.
+          steam drum water levels. The operators block automatic
+          trip signals from the steam drum separators to prevent
+          an unplanned shutdown during the test. They are
+          permitted to adjust the pressure setpoint; the water
+          level setpoint is not actively changed but has been
+          left at an incorrect value from prior operations.
 
   01:22   Steam drum level and pressure begin stabilizing, but the
   :30     extra cold feedwater suppresses steam production, which
@@ -213,15 +216,18 @@ Two fatal design flaws made Chernobyl possible:
   :43     530 MWt and is RISING. Fuel elements begin rupturing.
 
           The ruptured fuel increases steam generation further
-          (positive void coefficient feedback). The 1,000-tonne
-          upper biological shield (reactor cover plate) partially
-          lifts, severing all remaining fuel channels and JAMMING
-          the control rods.
+          (positive void coefficient feedback).
 
-          The rods stop at approximately 2-2.5 meters of their
-          full 7-meter travel. Akimov disconnects the servo
-          clutches to let the rods fall under gravity, but they
-          do not move — the channels are deformed.
+          Synchro indicators in the control room show the rods
+          at approximately 2-2.5 meters of their full 7-meter
+          travel. Whether the rods physically jammed (from
+          channel deformation) or were simply still in transit
+          when the reactor was destroyed is unproven — the
+          explosion occurred only 8-10 seconds after AZ-5, and
+          simulations of the accident produce the same result
+          regardless of whether the rods stop moving. Akimov
+          disconnects the servo clutches to let the rods fall
+          under gravity.
 
   01:23   PROMPT SUPERCRITICAL EXCURSION.
   :47     Reactor power reaches an estimated 30,000 MWt —
@@ -263,7 +269,7 @@ Two fatal design flaws made Chernobyl possible:
   t=163       SCRAM. Graphite displacer tips enter core.
   t=172       Positive scram effect — reactivity spike.
   t=178       01:23:43 — Power exceeds 530 MWt.
-  t=184       Rods jammed at ~2-2.5m of 7m.
+  t=184       Rods at ~2-2.5m of 7m when reactor destroyed.
   t=190       01:23:47 — Prompt supercritical (~30,000 MWt).
   t=200       Reactor destroyed. Simulation pauses.
 
@@ -281,10 +287,11 @@ Two fatal design flaws made Chernobyl possible:
     (black) as coolant flow drops.
 
   - THE SCRAM at t=163: Watch the control rods. They insert a
-    few rows (blue graphite tips visible first!), reach ~30%
-    depth, then STALL as steam pressure in the channels pushes
-    them back up. They oscillate around the equilibrium — this
-    is historically accurate.
+    few rows (blue graphite tips visible first!), then slow and
+    stall as the power excursion deforms channels. In reality,
+    synchro indicators showed rods at ~30% depth (~2-2.5m of
+    7m) when the reactor was destroyed, though whether they
+    physically jammed or were still moving is uncertain.
 
   - POWER SURGE: After the positive scram, the neutron count
     explodes. The HUD shows power climbing past 300%.

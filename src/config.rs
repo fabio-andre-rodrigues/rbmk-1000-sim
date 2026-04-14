@@ -88,9 +88,10 @@ pub const VOID_COEFFICIENT_BOOST: f32 = 1.3;
 // === Channel Deformation ===
 // During a power excursion, fuel rods fragment and swell, pressure
 // tubes rupture, and graphite blocks shift — physically deforming
-// control rod channels. This is what jammed the rods at Chernobyl
-// (INSAG-7), NOT steam pressure in the rod channels (which had
-// separate low-pressure cooling circuits that did not boil).
+// control rod channels. This is one proposed mechanism for why the
+// rods reached only 2-2.5m of 7m at Chernobyl (INSAG-7), though
+// whether they physically jammed or were still in transit when the
+// reactor was destroyed ~8-10s after AZ-5 is unproven.
 // Deformation accumulates per-zone when zone activation rate exceeds
 // this threshold. Once buckled, channels stay buckled (ratchet).
 pub const CHANNEL_DEFORM_ZONE_THRESHOLD: f32 = 15.0; // act/s per zone (~1.9x normal)

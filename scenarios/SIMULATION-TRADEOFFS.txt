@@ -157,10 +157,12 @@ hydraulics. We use thousands and a 50x20 grid.
       circuits — this water did NOT boil during the accident.
     - The graphite displacer is 4.5m long with a 1.25m water
       column at each end when fully withdrawn.
-    - During SCRAM, rods seized at 2-2.5m of 7m travel due to
-      fuel channel deformation from the power excursion —
-      ruptured fuel, swollen pressure tubes, and shifted graphite
-      blocks physically buckled the control rod channels.
+    - During SCRAM, synchro indicators showed rods at 2-2.5m of
+      7m travel when the reactor was destroyed. Whether this was
+      due to channel deformation (ruptured fuel, swollen pressure
+      tubes, shifted graphite blocks) or simply the rods still
+      being in transit during the 8-10 seconds before destruction
+      is unproven.
 
   OUR MODEL:
     - 5 control rods (one per 10-column zone).
@@ -182,8 +184,10 @@ hydraulics. We use thousands and a 50x20 grid.
       local reactivity before the boron absorber arrives. This
       is the key Chernobyl mechanism and is correctly modeled.
     - Gradual rod insertion (not instant) with realistic speed.
-    - Channel deformation from the power excursion jams rods at
-      a depth consistent with the historical ~2-2.5m of 7m.
+    - Power excursion limits rod insertion to a depth consistent
+      with the historical ~2-2.5m of 7m (whether from channel
+      deformation or destruction in transit is historically
+      uncertain).
     - Rod channels move freely during normal operation (separate
       low-pressure cooling, no steam resistance).
     - The displacer tips are visually distinct (blue vs. red)
@@ -301,7 +305,7 @@ hydraulics. We use thousands and a 50x20 grid.
   3. Rod withdrawal is necessary to overcome xenon
   4. Loss of coolant flow → steam → positive void coefficient → surge
   5. SCRAM with graphite tips → initial reactivity INCREASE
-  6. Power excursion deforms channels → rods jam at ~30% depth
+  6. Power excursion limits rod insertion to ~30% depth
   7. The disaster emerges as a natural consequence of the RBMK's
      design flaws when combined with the operator actions
 
@@ -385,17 +389,20 @@ hydraulics. We use thousands and a 50x20 grid.
     Source:     Fission product yield data
     Match:      Exact
 
-  Rod jamming depth
+  Rod depth at destruction
     Simulator: ~30% (6-7 of 20 rows)
-    Real RBMK: ~30-36% (2-2.5m of 7m)
+    Real RBMK: ~30-36% (2-2.5m of 7m) per synchro indicators
     Source:     INSAG-7
     Match:      Matches
 
-  Rod jamming cause
-    Simulator: Channel deformation at high power
-    Real RBMK: Fuel fragmentation -> channel buckling
-    Source:     INSAG-7
-    Match:      Correct mechanism
+  Rod arrest mechanism
+    Simulator: Channel deformation at high power (modeled)
+    Real RBMK: Unproven — rods may have jammed from channel
+               deformation, or may have still been in transit
+               when the reactor was destroyed 8-10s after AZ-5.
+               Simulations produce the explosion regardless.
+    Source:     INSAG-7 (rod depth observed, cause uncertain)
+    Match:      Plausible mechanism (one of several hypotheses)
 
   Effective enrichment
     Simulator: Noted as ~1.3% in comments
@@ -548,7 +555,7 @@ hydraulics. We use thousands and a 50x20 grid.
       c. Iodine accumulates (>10 total)
       d. Pressure exceeds 50 MPa during coolant loss
       e. Power exceeds 200% during void coefficient surge
-      f. SCRAM rods blocked by channel deformation (<20% depth)
+      f. SCRAM rods reach only partial depth (<20% insertion)
 
     The scenario provides only operator actions. Every checkpoint
     is an emergent result — not scripted.

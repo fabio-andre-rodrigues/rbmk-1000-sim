@@ -98,15 +98,17 @@ THE CHERNOBYL SCENARIO
   5. Turbine test begins — coolant pumps lose power
   6. Steam builds — positive void coefficient — power surge
   7. AZ-5 (SCRAM) pressed — graphite tips cause initial spike
-  8. Steam pressure blocks rod insertion — rods bounce at ~30%
+  8. Power excursion limits rod insertion — rods reach only ~30%
   9. Prompt supercritical excursion — reactor destroyed
 
   Watch the control rods during SCRAM — they insert a few rows,
-  then steam pushes them back up. According to the synchro
-  indicators in the control room, the real rods seized at a depth
-  of 2-2.5 meters out of their full 7-meter travel. The 1000-tonne
-  reactor cover plate partially detached, rupturing fuel channels
-  and jamming all control rods. The "positive scram" effect — where
+  then the power excursion deforms channels, slowing insertion.
+  Synchro indicators in the control room showed the rods at
+  2-2.5 meters of their full 7-meter travel when the reactor
+  was destroyed. Whether the rods physically jammed or were
+  simply still in transit during the 8-10 seconds before
+  destruction is unproven — simulations produce the same
+  explosion regardless. The "positive scram" effect — where
   graphite displacer tips initially increase reactivity by displacing
   neutron-absorbing water — had been discovered in 1983 at the
   Ignalina Nuclear Power Plant, but countermeasures were never
